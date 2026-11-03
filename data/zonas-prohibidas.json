@@ -1,0 +1,28 @@
+{
+  "zonas": [
+    {
+      "id": "cauce-san-lazaro",
+      "nombre": "Cauce activo San Lázaro",
+      "motivo": "Cauce estrecho con viviendas al borde; prohibido ingresar con maquinaria o cuadrillas durante lluvias.",
+      "poligono": [
+        [-71.5365, -16.4045],
+        [-71.532, -16.4045],
+        [-71.5315, -16.4],
+        [-71.5345, -16.3995],
+        [-71.537, -16.4015]
+      ]
+    },
+    {
+      "id": "canteras-anashuayco",
+      "nombre": "Canteras de Añashuayco",
+      "motivo": "Paredes de sillar inestables; riesgo de derrumbe. Solo personal especializado.",
+      "poligono": [
+        [-71.5775, -16.338],
+        [-71.571, -16.338],
+        [-71.57, -16.333],
+        [-71.5735, -16.3315],
+        [-71.578, -16.3345]
+      ]
+    }
+  ]
+}

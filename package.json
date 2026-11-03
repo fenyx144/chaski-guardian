@@ -1,0 +1,31 @@
+{
+  "name": "yaku-guardian",
+  "version": "0.1.0",
+  "description": "Sistema de alerta temprana ante lluvias de El Niño para barrios de quebrada en Arequipa, Perú",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "framer-motion": "^11.11.0",
+    "maplibre-gl": "^4.7.1",
+    "next": "^14.2.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.0",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@types/three": "^0.170.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.2"
+  }
+}

@@ -1,0 +1,13 @@
+# dependencies
+node_modules/
+# next
+.next/
+out/
+# env
+.env
+.env*.local
+# data local (reportes y misiones de demo)
+data/store.json
+# misc
+.DS_Store
+*.log
