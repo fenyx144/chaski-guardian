@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Mascota from "@/components/Mascota";
@@ -10,19 +10,72 @@ interface NinoData {
   fase: "El Niño" | "La Niña" | "Neutral";
 }
 
-interface CeldaMar {
-  lat: number;
-  lon: number;
-  sst: number;
+interface DatosMapa {
+  lats: number[];
+  lons: number[];
+  paso: number;
+  sst: (number | null)[][];
+  aire: (number | null)[][];
+  nubes: (number | null)[][];
+  lluvia: (number | null)[][];
 }
+
+type Capa = "mar" | "aire" | "lluvia" | "nubes";
 
 const AREQUIPA: [number, number] = [-71.54, -16.4];
 
-function palabraDe(sst: number): string {
-  if (sst >= 27) return "agua caliente";
-  if (sst < 22) return "agua fría";
-  return "agua normal";
-}
+type RGBA = [number, number, number, number];
+
+const BANDAS: Record<Capa, (v: number | null) => RGBA | null> = {
+  mar: (v) => {
+    if (v === null) return null;
+    if (v < 18) return [27, 58, 122, 210];
+    if (v < 20) return [47, 111, 181, 210];
+    if (v < 22) return [63, 167, 201, 210];
+    if (v < 24) return [111, 194, 180, 210];
+    if (v < 26) return [232, 200, 50, 210];
+    if (v < 28) return [239, 125, 38, 210];
+    if (v < 30) return [255, 88, 51, 210];
+    return [179, 38, 30, 220];
+  },
+  aire: (v) => {
+    if (v === null) return null;
+    if (v < 10) return [27, 58, 122, 200];
+    if (v < 15) return [47, 111, 181, 200];
+    if (v < 20) return [63, 167, 201, 200];
+    if (v < 25) return [232, 200, 50, 200];
+    if (v < 30) return [255, 88, 51, 200];
+    return [179, 38, 30, 210];
+  },
+  lluvia: (v) => {
+    if (v === null || v <= 0) return null;
+    if (v < 2) return [188, 216, 245, 210];
+    if (v < 10) return [91, 155, 213, 215];
+    if (v < 30) return [31, 95, 168, 220];
+    return [106, 63, 181, 225];
+  },
+  nubes: (v) => {
+    if (v === null) return null;
+    if (v < 15) return [255, 255, 255, 50];
+    if (v < 40) return [217, 212, 197, 190];
+    if (v < 70) return [154, 147, 138, 200];
+    return [74, 70, 64, 210];
+  },
+};
+
+const LEYENDAS: Record<Capa, [string, string][]> = {
+  mar: [["Fría (menos de 20°)", "#2f6fb5"], ["Normal (20 a 26°)", "#e8c832"], ["Caliente (más de 26°)", "#ff5833"]],
+  aire: [["Frío (menos de 15°)", "#2f6fb5"], ["Normal (15 a 25°)", "#e8c832"], ["Caliente (más de 25°)", "#ff5833"]],
+  lluvia: [["Poca (menos de 10 mm)", "#5b9bd5"], ["Mucha (10 mm o más)", "#1f5fa8"]],
+  nubes: [["Despejado", "#d9d4c5"], ["Nublado", "#4a4640"]],
+};
+
+const FRASE: Record<Capa, (v: number) => string> = {
+  mar: (v) => `Aquí el mar está a ${v} grados: ${v >= 27 ? "agua caliente" : v < 22 ? "agua fría" : "agua normal"}.`,
+  aire: (v) => `Aquí el aire está a ${v} grados.`,
+  lluvia: (v) => (v <= 0 ? "Aquí no llovió ayer ni hoy." : `Aquí cayeron ${v} mm entre ayer y hoy.`),
+  nubes: (v) => (v < 40 ? "Aquí está despejado." : "Aquí está nublado."),
+};
 
 function fraseEstado(d: NinoData): { titulo: string; detalle: string; animo: "feliz" | "preocupado" | "alerta" } {
   if (d.fase === "El Niño") {
@@ -36,21 +89,73 @@ function fraseEstado(d: NinoData): { titulo: string; detalle: string; animo: "fe
   return { titulo: "El mar está normal: no hay El Niño.", detalle: "Igual mira tu semáforo si llueve.", animo: "feliz" };
 }
 
+function calorURL(vals: (number | null)[][], capa: Capa): string {
+  const h = vals.length;
+  const w = vals[0].length;
+  const chico = document.createElement("canvas");
+  chico.width = w;
+  chico.height = h;
+  const c = chico.getContext("2d")!;
+  const banda = BANDAS[capa];
+  for (let r = 0; r < h; r++) {
+    for (let q = 0; q < w; q++) {
+      const col = banda(vals[r][q]);
+      if (!col) continue;
+      c.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${col[3] / 255})`;
+      c.fillRect(q, h - 1 - r, 1, 1);
+    }
+  }
+  const grande = document.createElement("canvas");
+  grande.width = w * 8;
+  grande.height = h * 8;
+  const g = grande.getContext("2d")!;
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = "high";
+  g.drawImage(chico, 0, 0, grande.width, grande.height);
+  return grande.toDataURL("image/png");
+}
+
 export default function MapaNino() {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<maplibregl.Map | null>(null);
   const [datos, setDatos] = useState<NinoData | null>(null);
+  const [rejilla, setRejilla] = useState<DatosMapa | null>(null);
+  const [capa, setCapa] = useState<Capa>("mar");
   const [pintando, setPintando] = useState(true);
   const [avisoUbic, setAvisoUbic] = useState("");
   const marcadorUsuario = useRef<maplibregl.Marker | null>(null);
+
+  const pintar = useCallback(
+    (m: DatosMapa, c: Capa) => {
+      const map = mapa.current;
+      if (!map) return;
+      const vals = m[capaKey(c)];
+      const url = calorURL(vals, c);
+      const medio = m.paso / 2;
+      const bounds: [[number, number], [number, number]] = [
+        [m.lons[0] - medio, m.lats[0] - medio],
+        [m.lons[m.lons.length - 1] + medio, m.lats[m.lats.length - 1] + medio],
+      ];
+      const src = map.getSource("capa") as unknown as
+        | { updateImage?: (o: { url: string }) => void }
+        | undefined;
+      if (src?.updateImage) {
+        src.updateImage({ url });
+        return;
+      }
+      map.addSource("capa", { type: "image", url, coordinates: [bounds[0], [bounds[1][0], bounds[0][1]], bounds[1], [bounds[0][0], bounds[1][1]]] });
+      map.addLayer({ id: "capa-fill", type: "raster", source: "capa", paint: { "raster-opacity": 0.85 } });
+    },
+    []
+  );
 
   useEffect(() => {
     if (!contenedor.current || mapa.current) return;
     const map = new maplibregl.Map({
       container: contenedor.current,
       style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-      center: [-130, 2],
-      zoom: 2,
+      center: [-100, -8],
+      zoom: 3,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.dragRotate.disable();
@@ -60,53 +165,27 @@ export default function MapaNino() {
       try {
         const [rNino, rMar] = await Promise.all([fetch("/api/nino"), fetch("/api/mar")]);
         if (!rNino.ok || !rMar.ok) throw new Error();
-        const d = (await rNino.json()) as NinoData;
-        const m = (await rMar.json()) as { celdas: CeldaMar[]; paso: number };
-        setDatos(d);
-        const medio = m.paso / 2;
-        map.addSource("mar", {
-          type: "geojson",
-          data: {
-            type: "FeatureCollection",
-            features: m.celdas.map((c) => ({
-              type: "Feature",
-              properties: {
-                sst: c.sst,
-                palabra: palabraDe(c.sst),
-                frase: `Aquí el agua está a ${c.sst} grados: ${palabraDe(c.sst)}.`,
-              },
-              geometry: {
-                type: "Polygon",
-                coordinates: [[
-                  [c.lon - medio, c.lat - medio],
-                  [c.lon + medio, c.lat - medio],
-                  [c.lon + medio, c.lat + medio],
-                  [c.lon - medio, c.lat + medio],
-                  [c.lon - medio, c.lat - medio],
-                ]],
-              },
-            })),
-          } as unknown as GeoJSON.FeatureCollection,
-        });
-        map.addLayer({
-          id: "mar-fill",
-          type: "fill",
-          source: "mar",
-          paint: {
-            "fill-color": ["step", ["get", "sst"], "#1f6fb5", 22, "#e8dcc3", 27, "#ff5833"],
-            "fill-opacity": 0.6,
-          },
-        });
-        map.on("click", "mar-fill", (e) => {
-          const f = e.features?.[0];
-          const frase = (f?.properties as { frase?: string } | undefined)?.frase;
-          if (frase) new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<strong>${frase}</strong>`).addTo(map);
-        });
+        setDatos((await rNino.json()) as NinoData);
+        const m = (await rMar.json()) as DatosMapa;
+        setRejilla(m);
+        pintar(m, "mar");
       } catch {
         /* el mapa base sigue visible */
       } finally {
         setPintando(false);
       }
+
+      map.on("click", "capa-fill", (e) => {
+        const g = rejillaRef.current;
+        const cc = capaRef.current;
+        if (!g || !e.lngLat) return;
+        const qi = Math.round((e.lngLat.lng - g.lons[0]) / g.paso);
+        const ri = Math.round((e.lngLat.lat - g.lats[0]) / g.paso);
+        if (ri < 0 || ri >= g.lats.length || qi < 0 || qi >= g.lons.length) return;
+        const v = g[capaKey(cc)][ri][qi];
+        if (v === null || v === undefined) return;
+        new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<strong>${FRASE[cc](v)}</strong>`).addTo(map);
+      });
 
       const el = document.createElement("div");
       el.style.cssText =
@@ -121,7 +200,18 @@ export default function MapaNino() {
       map.remove();
       mapa.current = null;
     };
-  }, []);
+  }, [pintar]);
+
+  const rejillaRef = useRef<DatosMapa | null>(null);
+  const capaRef = useRef<Capa>("mar");
+  useEffect(() => {
+    rejillaRef.current = rejilla;
+  }, [rejilla]);
+
+  useEffect(() => {
+    capaRef.current = capa;
+    if (rejilla) pintar(rejilla, capa);
+  }, [capa, rejilla, pintar]);
 
   const ubicarme = () => {
     const map = mapa.current;
@@ -157,6 +247,12 @@ export default function MapaNino() {
   };
 
   const estado = datos ? fraseEstado(datos) : null;
+  const capas: { id: Capa; nombre: string; icono: string }[] = [
+    { id: "mar", nombre: "Mar", icono: "🌊" },
+    { id: "aire", nombre: "Aire", icono: "🌡️" },
+    { id: "lluvia", nombre: "Lluvia", icono: "🌧️" },
+    { id: "nubes", nombre: "Nubes", icono: "☁️" },
+  ];
 
   return (
     <div className="space-y-4">
@@ -171,10 +267,26 @@ export default function MapaNino() {
       )}
 
       <div className="relative overflow-hidden rounded-3xl border-2 border-cocoa shadow-pop dark:border-crema/25 dark:shadow-pop-noche">
-        <div ref={contenedor} className="h-[400px] w-full md:h-[480px]" aria-label="Mapa de la temperatura del mar" />
+        <div ref={contenedor} className="h-[400px] w-full md:h-[480px]" aria-label="Mapa de calor del Pacífico" />
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+          {capas.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setCapa(c.id)}
+              aria-pressed={capa === c.id}
+              className={`rounded-xl border-2 px-3 py-1.5 text-sm font-extrabold backdrop-blur transition-all ${
+                capa === c.id
+                  ? "border-cocoa bg-sol text-cocoa"
+                  : "border-white/40 bg-black/60 text-white hover:bg-black/80"
+              }`}
+            >
+              {c.icono} {c.nombre}
+            </button>
+          ))}
+        </div>
         {pintando && (
-          <p className="absolute left-3 top-3 rounded-xl bg-black/60 px-3 py-1.5 text-xs font-extrabold text-white">
-            Pintando el mar…
+          <p className="absolute bottom-4 left-3 rounded-xl bg-black/60 px-3 py-1.5 text-xs font-extrabold text-white">
+            Pintando el mapa…
           </p>
         )}
         <button
@@ -184,29 +296,27 @@ export default function MapaNino() {
           📍 Ubicarme
         </button>
         {avisoUbic && (
-          <p className="absolute bottom-4 left-3 max-w-[60%] rounded-xl bg-black/70 px-3 py-1.5 text-xs font-bold text-white">
+          <p className="absolute bottom-16 right-3 max-w-[60%] rounded-xl bg-black/70 px-3 py-1.5 text-xs font-bold text-white">
             {avisoUbic}
           </p>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-extrabold">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm border border-cocoa/40 bg-[#ff5833]" />
-          Agua caliente
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm border border-cocoa/40 bg-[#e8dcc3]" />
-          Agua normal
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm border border-cocoa/40 bg-[#1f6fb5]" />
-          Agua fría
-        </span>
+        {LEYENDAS[capa].map(([t, c]) => (
+          <span key={t} className="flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded-sm border border-cocoa/40" style={{ backgroundColor: c }} />
+            {t}
+          </span>
+        ))}
         <span className="ml-auto text-xs font-bold text-cocoa/55 dark:text-crema/55">
-          Toca el mar para saber cómo está · Mar: Open-Meteo
+          Toca el mapa para saber cómo está · Datos: Open-Meteo
         </span>
       </div>
     </div>
   );
+}
+
+function capaKey(c: Capa): "sst" | "aire" | "lluvia" | "nubes" {
+  return c === "mar" ? "sst" : c;
 }
