@@ -25,8 +25,6 @@ interface ClimaGrid {
   lluvia: (number | null)[][];
 }
 
-type Vista = "mar" | "clima";
-
 const AREQUIPA: [number, number] = [-71.54, -16.4];
 
 const CIUDADES: { nombre: string; lon: number; lat: number }[] = [
@@ -72,21 +70,25 @@ export default function MapaNino() {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<maplibregl.Map | null>(null);
   const [datos, setDatos] = useState<NinoData | null>(null);
-  const [vista, setVista] = useState<Vista>("mar");
+  const [verMar, setVerMar] = useState(true);
+  const [verClima, setVerClima] = useState(true);
+  const [dias, setDias] = useState<string[]>([]);
+  const [diaIdx, setDiaIdx] = useState(9);
+  const [animando, setAnimando] = useState(false);
   const [pintando, setPintando] = useState(true);
   const [avisoUbic, setAvisoUbic] = useState("");
   const marcadorUsuario = useRef<maplibregl.Marker | null>(null);
   const anomRef = useRef<Anomalia | null>(null);
   const marcadoresClima = useRef<maplibregl.Marker[]>([]);
-  const vistaRef = useRef<Vista>("mar");
+  const verMarRef = useRef(true);
 
   useEffect(() => {
     if (!contenedor.current || mapa.current) return;
     const map = new maplibregl.Map({
       container: contenedor.current,
       style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-      center: [-95, -10],
-      zoom: 3.2,
+      center: [-86, -11],
+      zoom: 4,
       maxBounds: [[-175, -75], [-30, 50]],
       minZoom: 2.4,
     });
@@ -106,6 +108,15 @@ export default function MapaNino() {
         if (rAnom.ok) {
           const a = (await rAnom.json()) as Anomalia & { fecha: string };
           anomRef.current = a;
+          const ult = new Date(`${a.fecha}T12:00:00Z`);
+          const lista: string[] = [];
+          for (let i = 9; i >= 0; i--) {
+            const d = new Date(ult);
+            d.setUTCDate(d.getUTCDate() - i);
+            lista.push(d.toISOString().slice(0, 10));
+          }
+          setDias(lista);
+          setDiaIdx(lista.length - 1);
           map.addSource("anom", {
             type: "raster",
             tiles: [`/api/wms-tile/{z}/{x}/{y}?t=${a.fecha}`],
@@ -158,7 +169,7 @@ export default function MapaNino() {
       }
 
       map.on("click", (e) => {
-        if (vistaRef.current !== "mar") return;
+        if (!verMarRef.current) return;
         const a = anomRef.current;
         if (!a) return;
         const pasoLat = a.lats.length > 1 ? a.lats[1] - a.lats[0] : 1;
@@ -200,21 +211,46 @@ export default function MapaNino() {
   }, []);
 
   useEffect(() => {
-    vistaRef.current = vista;
+    verMarRef.current = verMar;
     const map = mapa.current;
     if (!map) return;
     const aplicar = () => {
       if (map.getLayer("anom-fill")) {
-        map.setLayoutProperty("anom-fill", "visibility", vista === "mar" ? "visible" : "none");
+        map.setLayoutProperty("anom-fill", "visibility", verMar ? "visible" : "none");
       }
+    };
+    if (map.loaded()) aplicar();
+    else map.once("load", aplicar);
+  }, [verMar]);
+
+  useEffect(() => {
+    const map = mapa.current;
+    if (!map) return;
+    const aplicar = () => {
       for (const mk of marcadoresClima.current) {
-        if (vista === "clima") mk.addTo(map);
+        if (verClima) mk.addTo(map);
         else mk.remove();
       }
     };
     if (map.loaded()) aplicar();
     else map.once("load", aplicar);
-  }, [vista]);
+  }, [verClima]);
+
+  useEffect(() => {
+    if (!animando || dias.length === 0) return;
+    const id = setInterval(() => setDiaIdx((i) => (i + 1) % dias.length), 1000);
+    return () => clearInterval(id);
+  }, [animando, dias]);
+
+  useEffect(() => {
+    const map = mapa.current;
+    const f = dias[diaIdx];
+    if (!map || !f) return;
+    const src = map.getSource("anom") as unknown as
+      | { setTiles?: (t: string[]) => void }
+      | undefined;
+    src?.setTiles?.([`/api/wms-tile/{z}/{x}/{y}?t=${f}`]);
+  }, [diaIdx, dias]);
 
   const ubicarme = () => {
     const map = mapa.current;
@@ -276,26 +312,52 @@ export default function MapaNino() {
         <div ref={contenedor} className="h-[400px] w-full md:h-[480px]" aria-label="Mapa del estado del mar y el clima" />
         <div className="absolute left-3 top-3 flex gap-2">
           <button
-            onClick={() => setVista("mar")}
-            aria-pressed={vista === "mar"}
+            onClick={() => setVerMar((v) => !v)}
+            aria-pressed={verMar}
             className={`rounded-xl border-2 px-3 py-1.5 text-sm font-extrabold backdrop-blur transition-all ${
-              vista === "mar" ? "border-cocoa bg-sol text-cocoa" : "border-white/40 bg-black/60 text-white hover:bg-black/80"
+              verMar ? "border-cocoa bg-sol text-cocoa" : "border-white/40 bg-black/60 text-white hover:bg-black/80"
             }`}
           >
             🌊 Mar
           </button>
           <button
-            onClick={() => setVista("clima")}
-            aria-pressed={vista === "clima"}
+            onClick={() => setVerClima((v) => !v)}
+            aria-pressed={verClima}
             className={`rounded-xl border-2 px-3 py-1.5 text-sm font-extrabold backdrop-blur transition-all ${
-              vista === "clima" ? "border-cocoa bg-sol text-cocoa" : "border-white/40 bg-black/60 text-white hover:bg-black/80"
+              verClima ? "border-cocoa bg-sol text-cocoa" : "border-white/40 bg-black/60 text-white hover:bg-black/80"
             }`}
           >
             🌦️ Clima
           </button>
         </div>
+        {dias.length > 0 && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-xl bg-black/60 px-2 py-1.5 backdrop-blur">
+            <button
+              onClick={() => setAnimando((v) => !v)}
+              aria-label={animando ? "Pausar" : "Ver el cambio día a día"}
+              className="rounded-lg bg-sol px-2.5 py-1 text-sm font-black text-cocoa"
+            >
+              {animando ? "⏸" : "▶"}
+            </button>
+            <span className="text-xs font-extrabold text-white">
+              {new Date(`${dias[diaIdx]}T12:00:00`).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={dias.length - 1}
+              value={diaIdx}
+              onChange={(e) => {
+                setAnimando(false);
+                setDiaIdx(Number(e.target.value));
+              }}
+              aria-label="Día"
+              className="w-24 accent-[#ffc933]"
+            />
+          </div>
+        )}
         {pintando && (
-          <p className="absolute bottom-4 left-3 rounded-xl bg-black/60 px-3 py-1.5 text-xs font-extrabold text-white">
+          <p className="absolute left-1/2 top-3 -translate-x-1/2 rounded-xl bg-black/60 px-3 py-1.5 text-xs font-extrabold text-white">
             Pintando el mapa…
           </p>
         )}
@@ -312,7 +374,7 @@ export default function MapaNino() {
         )}
       </div>
 
-      {vista === "mar" ? (
+      {verMar && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-extrabold">
           {leyendaMar.map(([t, c]) => (
             <span key={t} className="flex items-center gap-1">
@@ -324,7 +386,8 @@ export default function MapaNino() {
             Comparado con lo normal · NOAA
           </span>
         </div>
-      ) : (
+      )}
+      {verClima && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-extrabold">
           <span>☀️ Sol</span>
           <span>🌤️ Sol y nubes</span>
