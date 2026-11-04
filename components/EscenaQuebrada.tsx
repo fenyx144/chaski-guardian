@@ -220,7 +220,7 @@ export default function EscenaQuebrada({ semaforo }: { semaforo: Semaforo }) {
   return (
     <svg
       viewBox="0 0 800 420"
-      className="h-auto w-full rounded-xl border border-white/10"
+      className="block h-auto w-full"
       role="img"
       aria-label={`Escena de quebrada en semáforo ${semaforo}`}
     >

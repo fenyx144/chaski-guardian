@@ -125,9 +125,9 @@ export default function MapaPanel({ reportes }: { reportes: Reporte[] }) {
   }, [reportes]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10">
+    <div className="overflow-hidden rounded-3xl border-2 border-cocoa shadow-pop dark:border-crema/25 dark:shadow-pop-noche">
       <div ref={contenedor} className="h-[420px] w-full" aria-label="Mapa de reportes de Arequipa" />
-      <div className="flex flex-wrap gap-3 bg-andino-carbon px-4 py-2 text-xs">
+      <div className="flex flex-wrap gap-3 border-t-2 border-cocoa/15 bg-white px-4 py-2 text-xs font-bold text-cocoa/70 dark:border-white/10 dark:bg-carboncito dark:text-crema/75">
         <span>🟢 Bajo</span>
         <span>🟡 Moderado</span>
         <span>🔴 Alto</span>

@@ -27,8 +27,8 @@ export default function Logo({ size = 34 }: { size?: number }) {
           strokeLinecap="round"
         />
       </svg>
-      <span className="font-display text-lg font-bold tracking-tight">
-        Yaku <span className="text-andino-ocreClaro">Guardian</span>
+      <span className="font-display text-xl font-bold tracking-tight">
+        Yaku <span className="text-clay dark:text-sol">Guardian</span>
       </span>
     </span>
   );
