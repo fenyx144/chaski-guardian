@@ -44,24 +44,10 @@ const CIUDADES: { nombre: string; lon: number; lat: number }[] = [
   { nombre: "Pucallpa", lon: -74.55, lat: -8.38 },
 ];
 
-function bandaAnom(v: number | null): string | null {
-  if (v === null) return null;
-  if (v < -3) return "#082567";
-  if (v < -2) return "#08519c";
-  if (v < -1) return "#3182bd";
-  if (v < -0.5) return "#9ecae1";
-  if (v < 0.5) return "#f4f1e6";
-  if (v < 1) return "#fee08b";
-  if (v < 2) return "#fdae61";
-  if (v < 3) return "#f46d43";
-  if (v < 4) return "#d73027";
-  return "#a50026";
-}
-
-const SVG_SOL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><g stroke="#3d2b1f" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="5" fill="#ffc933"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19" fill="none"/></g></svg>`;
-const SVG_SOL_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><circle cx="9" cy="9" r="4" fill="#ffc933" stroke="#3d2b1f" stroke-width="1.4"/><path d="M7 20h9a4.5 4.5 0 0 0 .8-8.9A6 6 0 0 0 5.3 12 3.8 3.8 0 0 0 7 20Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
-const SVG_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M7 19h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 11 4 4 0 0 0 7 19Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
-const SVG_LLUVIA = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M7 15h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 7 4 4 0 0 0 7 15Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/><g stroke="#1f6fb5" stroke-width="2" stroke-linecap="round"><path d="M8 18l-1 2.4M13 18l-1 2.4M18 18l-1 2.4"/></g></svg>`;
+const SVG_SOL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19"><g stroke="#3d2b1f" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="5" fill="#ffc933"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19" fill="none"/></g></svg>`;
+const SVG_SOL_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19"><circle cx="9" cy="9" r="4" fill="#ffc933" stroke="#3d2b1f" stroke-width="1.4"/><path d="M7 20h9a4.5 4.5 0 0 0 .8-8.9A6 6 0 0 0 5.3 12 3.8 3.8 0 0 0 7 20Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
+const SVG_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19"><path d="M7 19h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 11 4 4 0 0 0 7 19Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
+const SVG_LLUVIA = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19"><path d="M7 15h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 7 4 4 0 0 0 7 15Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/><g stroke="#1f6fb5" stroke-width="2" stroke-linecap="round"><path d="M8 18l-1 2.4M13 18l-1 2.4M18 18l-1 2.4"/></g></svg>`;
 
 function iconoDe(lluvia: number, nubes: number): string {
   if (lluvia >= 2) return SVG_LLUVIA;
@@ -118,36 +104,19 @@ export default function MapaNino() {
         if (rNino.ok) setDatos((await rNino.json()) as NinoData);
 
         if (rAnom.ok) {
-          const a = (await rAnom.json()) as Anomalia;
+          const a = (await rAnom.json()) as Anomalia & { fecha: string };
           anomRef.current = a;
-          const w = a.lons.length;
-          const h = a.lats.length;
-          const cv = document.createElement("canvas");
-          cv.width = w;
-          cv.height = h;
-          const c = cv.getContext("2d")!;
-          for (let r = 0; r < h; r++) {
-            for (let q = 0; q < w; q++) {
-              const col = bandaAnom(a.vals[r][q]);
-              if (!col) continue;
-              c.fillStyle = col;
-              c.fillRect(q, h - 1 - r, 1, 1);
-            }
-          }
-          const pasoLat = h > 1 ? a.lats[1] - a.lats[0] : 1;
-          const pasoLon = w > 1 ? a.lons[1] - a.lons[0] : 1;
-          const sw: [number, number] = [a.lons[0] - pasoLon / 2, a.lats[0] - pasoLat / 2];
-          const ne: [number, number] = [a.lons[w - 1] + pasoLon / 2, a.lats[h - 1] + pasoLat / 2];
           map.addSource("anom", {
-            type: "image",
-            url: cv.toDataURL("image/png"),
-            coordinates: [sw, [ne[0], sw[1]], ne, [sw[0], ne[1]]],
+            type: "raster",
+            tiles: [`/api/wms-tile/{z}/{x}/{y}?t=${a.fecha}`],
+            tileSize: 512,
+            attribution: "Anomalía: NOAA Coral Reef Watch",
           });
           map.addLayer({
             id: "anom-fill",
             type: "raster",
             source: "anom",
-            paint: { "raster-opacity": 0.92, "raster-resampling": "nearest" },
+            paint: { "raster-opacity": 0.9 },
           });
         }
 
@@ -168,7 +137,7 @@ export default function MapaNino() {
             if (!d) continue;
             const el = document.createElement("div");
             el.style.cssText =
-              "display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.9);border:2px solid #3d2b1f;border-radius:9999px;padding:1px 8px 1px 2px;font-weight:800;font-size:12px;color:#241a13;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap";
+              "display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.92);border:1.5px solid #3d2b1f;border-radius:9999px;padding:0 6px 0 1px;font-weight:800;font-size:11px;color:#241a13;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap";
             el.innerHTML = `${iconoDe(d.lluvia, d.nubes)}<span>${d.aire ?? "?"}°</span>`;
             const mk = new maplibregl.Marker({ element: el })
               .setLngLat([ciudad.lon, ciudad.lat])
