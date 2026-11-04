@@ -280,8 +280,8 @@ export default function Home() {
           El Niño, <Garabato>ahora mismo</Garabato>
         </h2>
         <p className="mt-2 max-w-2xl font-medium text-cocoa/70 dark:text-crema/70">
-          Nubes reales sobre Sudamérica y el índice oficial. Ubícate para ver el
-          avance en tu zona.
+          Monitoreo del Pacífico con datos oficiales y gráficos de SENAMHI.
+          Ubícate para ver tu zona.
         </p>
         <div className="mt-5">
           <MapaNino />
