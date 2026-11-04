@@ -60,8 +60,100 @@ body {
   .yaku-rebote,
   .yaku-mascota-saludo,
   .yaku-mascota-susto,
-  .yaku-mascota-duda {
+  .yaku-mascota-duda,
+  .yaku-cabeza,
+  .yaku-cabeza-saludo,
+  .yaku-cabeza-susto,
+  .yaku-cabeza-duda,
+  .yaku-cuerpo {
     animation: none !important;
+  }
+}
+
+/* Marioneta Yaku: la cabeza cabecea */
+.yaku-cabeza {
+  transform-origin: 50% 92%;
+  animation: yaku-cabeza 3s ease-in-out infinite;
+}
+
+@keyframes yaku-cabeza {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-2.5%) rotate(2deg);
+  }
+}
+
+/* Marioneta Yaku: saludo enérgico */
+.yaku-cabeza-saludo {
+  transform-origin: 50% 92%;
+  animation: yaku-cabeza-saludo 1.2s ease-in-out infinite;
+}
+
+@keyframes yaku-cabeza-saludo {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-7deg);
+  }
+  50% {
+    transform: translateY(-4%) rotate(7deg);
+  }
+}
+
+/* Marioneta Yaku: susto (alerta) */
+.yaku-cabeza-susto {
+  transform-origin: 50% 92%;
+  animation: yaku-cabeza-susto 1.4s ease-in-out infinite;
+}
+
+@keyframes yaku-cabeza-susto {
+  0%,
+  20%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  5% {
+    transform: translateY(-3%) rotate(-5deg);
+  }
+  10% {
+    transform: translateY(-3%) rotate(5deg);
+  }
+  15% {
+    transform: translateY(0) rotate(-2deg);
+  }
+}
+
+/* Marioneta Yaku: duda (preocupado) */
+.yaku-cabeza-duda {
+  transform-origin: 50% 92%;
+  animation: yaku-cabeza-duda 3.4s ease-in-out infinite;
+}
+
+@keyframes yaku-cabeza-duda {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+/* Marioneta Yaku: el cuerpo respira */
+.yaku-cuerpo {
+  transform-origin: 50% 100%;
+  animation: yaku-cuerpo 3s ease-in-out infinite;
+}
+
+@keyframes yaku-cuerpo {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.015);
   }
 }
 

@@ -1,19 +1,24 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import type { Semaforo } from "@/lib/risk";
-import yakuImg from "@/public/mascota-yaku.png";
 
-// Yaku, el cuy guardián: mascota oficial del proyecto (imagen del usuario).
-// Se presenta en marco sticker blanco para que funcione en tema claro y oscuro.
-// La foto es fija: se anima con balanceos/saltos CSS y reacciona al toque.
+// Yaku, el cuy guardián: marioneta de 2 capas (cabeza + cuerpo) recortadas de la
+// imagen oficial. Cada capa se mueve por separado: la cabeza cabecea, el cuerpo
+// respira y todo reacciona al toque. El fondo blanco une las capas sin costuras.
 
 export type Animo = "feliz" | "preocupado" | "alerta" | "sorpresa";
 
 export function animoDe(semaforo: Semaforo): Exclude<Animo, "sorpresa"> {
   return semaforo === "rojo" ? "alerta" : semaforo === "amarillo" ? "preocupado" : "feliz";
 }
+
+const CABEZA_ANIM: Record<Animo, string> = {
+  feliz: "yaku-cabeza",
+  preocupado: "yaku-cabeza-duda",
+  alerta: "yaku-cabeza-susto",
+  sorpresa: "yaku-cabeza",
+};
 
 export default function Mascota({
   animo = "feliz",
@@ -22,39 +27,42 @@ export default function Mascota({
   className = "",
 }: {
   animo?: Animo;
-  /** Si es true, la imagen se mece saludando en bucle. */
+  /** Si es true, la cabeza se mueve más rápido como saludando. */
   saludo?: boolean;
   size?: number;
   className?: string;
 }) {
-  const movimiento = saludo
-    ? "yaku-mascota-saludo"
-    : animo === "alerta"
-    ? "yaku-mascota-susto"
-    : animo === "preocupado"
-    ? "yaku-mascota-duda"
-    : undefined;
-
   return (
     <span
       role="img"
       aria-label={`Yaku, el cuy guardián, ${animo}${saludo ? ", saludando" : ""}`}
       className="inline-block overflow-hidden rounded-[26%] border-[3px] border-cocoa bg-white leading-none dark:border-crema/70"
+      style={{ width: size, aspectRatio: "735 / 509" }}
     >
       <motion.span
-        className="block"
-        whileHover={{ scale: 1.05, rotate: -2 }}
-        whileTap={{ scale: 0.85, rotate: 3 }}
+        className="relative block h-full w-full"
+        whileHover={{ scale: 1.05, rotate: -1 }}
+        whileTap={{ scale: 0.88, rotate: 2 }}
         transition={{ type: "spring", stiffness: 400, damping: 12 }}
         title="¡Toca a Yaku!"
       >
-        <Image
-          src={yakuImg}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/mascota-cuerpo.png"
           alt=""
-          width={size}
-          height={Math.round((size * yakuImg.height) / yakuImg.width)}
-          className={`${movimiento ?? ""} ${className}`}
-          priority={size > 80}
+          aria-hidden
+          draggable={false}
+          className="yaku-cuerpo absolute select-none"
+          style={{ left: 0, top: "45.19%", width: "100%" }}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/mascota-cabeza.png"
+          alt=""
+          aria-hidden
+          draggable={false}
+          className={`absolute select-none ${saludo ? "yaku-cabeza-saludo" : CABEZA_ANIM[animo]} ${className}`}
+          style={{ left: "20.41%", top: 0, width: "51.7%" }}
         />
       </motion.span>
     </span>
