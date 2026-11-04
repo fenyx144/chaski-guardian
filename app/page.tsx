@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import EscenaQuebrada from "@/components/EscenaQuebrada";
 import Mascota, { animoDe } from "@/components/Mascota";
+import MapaNino from "@/components/MapaNino";
 import Boton from "@/components/Boton";
-import { Resaltado, Garabato, Nota, Flecha } from "@/components/Amable";
+import { Resaltado, Garabato, Nota } from "@/components/Amable";
 import { QUEBRADAS } from "@/lib/quebradas";
 import { SEMAFORO_META, type Semaforo } from "@/lib/risk";
 
@@ -58,7 +59,6 @@ export default function Home() {
   const [quebradaId, setQuebradaId] = useState(QUEBRADAS[0].id);
   const [riesgo, setRiesgo] = useState<RiesgoApi | null>(null);
   const [cargando, setCargando] = useState(false);
-  const [demo, setDemo] = useState(false);
 
   // Formulario de reporte
   const [tipo, setTipo] = useState("desborde");
@@ -72,12 +72,11 @@ export default function Home() {
 
   const quebrada = QUEBRADAS.find((q) => q.id === quebradaId) ?? QUEBRADAS[0];
 
-  const cargarRiesgo = useCallback(async (forzarDemo: boolean) => {
+  const cargarRiesgo = useCallback(async () => {
     setCargando(true);
     try {
       const q = QUEBRADAS.find((x) => x.id === quebradaId) ?? QUEBRADAS[0];
-      const url = `/api/risk?lat=${q.lat}&lon=${q.lon}${forzarDemo ? "&demo=rojo" : ""}`;
-      const res = await fetch(url);
+      const res = await fetch(`/api/risk?lat=${q.lat}&lon=${q.lon}`);
       const data = (await res.json()) as RiesgoApi;
       setRiesgo(data);
     } catch {
@@ -88,8 +87,8 @@ export default function Home() {
   }, [quebradaId]);
 
   useEffect(() => {
-    cargarRiesgo(demo);
-  }, [cargarRiesgo, demo]);
+    cargarRiesgo();
+  }, [cargarRiesgo]);
 
   const semaforo: Semaforo = riesgo?.semaforo ?? "verde";
   const meta = SEMAFORO_META[semaforo];
@@ -196,8 +195,8 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.24 }}
             className="mt-6 flex flex-wrap items-center gap-3"
           >
-            <Boton variante={demo ? "linea" : "coral"} onClick={() => setDemo((d) => !d)}>
-              {demo ? "Volver a datos reales" : "Simular lluvia fuerte"}
+            <Boton variante="tinta" href="#nino-vivo">
+              Ver El Niño en vivo ↓
             </Boton>
             <Boton variante="linea" href="/panel">
               Panel del coordinador →
@@ -210,24 +209,13 @@ export default function Home() {
             className="mt-3 flex items-center gap-3"
           >
             <Mascota animo="feliz" saludo size={84} />
-            <div>
-              <Nota>¡hola, soy Yaku!</Nota>
-              <div className="mt-1 flex items-center gap-1 text-naranja dark:text-sol">
-                <Flecha className="-scale-x-100 -rotate-12" />
-                <Nota>¡el botón es ideal para el video!</Nota>
-              </div>
-            </div>
+            <Nota>¡hola, soy Yaku!</Nota>
           </motion.div>
-          {demo && (
-            <p className="mt-3 max-w-md rounded-2xl border-2 border-cocoa bg-coral/15 p-3 text-sm font-bold dark:border-crema/40">
-              Modo demo: semáforo en rojo para la demostración.
-            </p>
-          )}
         </div>
 
         {/* Semáforo */}
         <motion.div
-          key={semaforo + String(demo)}
+          key={semaforo}
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
@@ -275,7 +263,7 @@ export default function Home() {
             <p className="mt-3 text-sm font-semibold text-cocoa/70 dark:text-crema/70">
               Han caído {riesgo.lluvia24h?.toFixed(1)} mm y se esperan{" "}
               {riesgo.lluvia48h?.toFixed(1)} mm
-              {!riesgo.openMeteoOk && !demo && " (sin conexión al servicio de lluvia)"}
+              {!riesgo.openMeteoOk && " (sin conexión al servicio de lluvia)"}
             </p>
           )}
           {riesgo && <p className="mt-2 font-medium">{riesgo.explicacion}</p>}
@@ -285,6 +273,20 @@ export default function Home() {
           </p>
         </motion.div>
       </section>
+
+      {/* El Niño en vivo */}
+      <motion.section id="nino-vivo" {...aparece} className="scroll-mt-24">
+        <h2 className="font-display text-3xl md:text-4xl">
+          El Niño, <Garabato>ahora mismo</Garabato>
+        </h2>
+        <p className="mt-2 max-w-2xl font-medium text-cocoa/70 dark:text-crema/70">
+          Nubes reales sobre Sudamérica y el índice oficial. Ubícate para ver el
+          avance en tu zona.
+        </p>
+        <div className="mt-5">
+          <MapaNino />
+        </div>
+      </motion.section>
 
       {/* Escena */}
       <motion.figure {...aparece}>
