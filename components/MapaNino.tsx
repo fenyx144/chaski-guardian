@@ -29,6 +29,21 @@ type Vista = "mar" | "clima";
 
 const AREQUIPA: [number, number] = [-71.54, -16.4];
 
+const CIUDADES: { nombre: string; lon: number; lat: number }[] = [
+  { nombre: "Piura", lon: -80.63, lat: -5.19 },
+  { nombre: "Chiclayo", lon: -79.84, lat: -6.77 },
+  { nombre: "Trujillo", lon: -79.03, lat: -8.11 },
+  { nombre: "Lima", lon: -77.04, lat: -12.05 },
+  { nombre: "Ica", lon: -75.73, lat: -14.07 },
+  { nombre: "Huancayo", lon: -75.21, lat: -12.07 },
+  { nombre: "Arequipa", lon: -71.54, lat: -16.4 },
+  { nombre: "Cusco", lon: -71.97, lat: -13.53 },
+  { nombre: "Puno", lon: -70.02, lat: -15.84 },
+  { nombre: "Iquitos", lon: -73.25, lat: -3.75 },
+  { nombre: "Tarapoto", lon: -76.36, lat: -6.49 },
+  { nombre: "Pucallpa", lon: -74.55, lat: -8.38 },
+];
+
 function bandaAnom(v: number | null): string | null {
   if (v === null) return null;
   if (v < -3) return "#082567";
@@ -43,10 +58,17 @@ function bandaAnom(v: number | null): string | null {
   return "#a50026";
 }
 
-const SVG_SOL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g stroke="#3d2b1f" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="5" fill="#ffc933"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19" fill="none"/></g></svg>`;
-const SVG_SOL_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="9" cy="9" r="4" fill="#ffc933" stroke="#3d2b1f" stroke-width="1.4"/><path d="M7 20h9a4.5 4.5 0 0 0 .8-8.9A6 6 0 0 0 5.3 12 3.8 3.8 0 0 0 7 20Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
-const SVG_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 19h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 11 4 4 0 0 0 7 19Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
-const SVG_LLUVIA = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 15h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 7 4 4 0 0 0 7 15Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/><g stroke="#1f6fb5" stroke-width="2" stroke-linecap="round"><path d="M8 18l-1 2.4M13 18l-1 2.4M18 18l-1 2.4"/></g></svg>`;
+const SVG_SOL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><g stroke="#3d2b1f" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="5" fill="#ffc933"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19" fill="none"/></g></svg>`;
+const SVG_SOL_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><circle cx="9" cy="9" r="4" fill="#ffc933" stroke="#3d2b1f" stroke-width="1.4"/><path d="M7 20h9a4.5 4.5 0 0 0 .8-8.9A6 6 0 0 0 5.3 12 3.8 3.8 0 0 0 7 20Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
+const SVG_NUBE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M7 19h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 11 4 4 0 0 0 7 19Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/></svg>`;
+const SVG_LLUVIA = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26"><path d="M7 15h9.5a4.8 4.8 0 0 0 .9-9.5A6.5 6.5 0 0 0 4.8 7 4 4 0 0 0 7 15Z" fill="#f5f2ea" stroke="#3d2b1f" stroke-width="1.4"/><g stroke="#1f6fb5" stroke-width="2" stroke-linecap="round"><path d="M8 18l-1 2.4M13 18l-1 2.4M18 18l-1 2.4"/></g></svg>`;
+
+function iconoDe(lluvia: number, nubes: number): string {
+  if (lluvia >= 2) return SVG_LLUVIA;
+  if (nubes >= 70) return SVG_NUBE;
+  if (nubes >= 40) return SVG_SOL_NUBE;
+  return SVG_SOL;
+}
 
 function fraseEstado(d: NinoData): { titulo: string; detalle: string; animo: "feliz" | "preocupado" | "alerta" } {
   if (d.fase === "El Niño") {
@@ -69,7 +91,7 @@ export default function MapaNino() {
   const [avisoUbic, setAvisoUbic] = useState("");
   const marcadorUsuario = useRef<maplibregl.Marker | null>(null);
   const anomRef = useRef<Anomalia | null>(null);
-  const climaRef = useRef<ClimaGrid | null>(null);
+  const marcadoresClima = useRef<maplibregl.Marker[]>([]);
   const vistaRef = useRef<Vista>("mar");
 
   useEffect(() => {
@@ -77,9 +99,10 @@ export default function MapaNino() {
     const map = new maplibregl.Map({
       container: contenedor.current,
       style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-      bounds: [[-103, -35], [-55, 9]],
-      maxBounds: [[-145, -72], [-20, 45]],
-      minZoom: 2.2,
+      center: [-95, -10],
+      zoom: 3.2,
+      maxBounds: [[-175, -75], [-30, 50]],
+      minZoom: 2.4,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.dragRotate.disable();
@@ -111,8 +134,10 @@ export default function MapaNino() {
               c.fillRect(q, h - 1 - r, 1, 1);
             }
           }
-          const sw: [number, number] = [a.lons[0] - 0.25, a.lats[0] - 0.25];
-          const ne: [number, number] = [a.lons[w - 1] + 0.25, a.lats[h - 1] + 0.25];
+          const pasoLat = h > 1 ? a.lats[1] - a.lats[0] : 1;
+          const pasoLon = w > 1 ? a.lons[1] - a.lons[0] : 1;
+          const sw: [number, number] = [a.lons[0] - pasoLon / 2, a.lats[0] - pasoLat / 2];
+          const ne: [number, number] = [a.lons[w - 1] + pasoLon / 2, a.lats[h - 1] + pasoLat / 2];
           map.addSource("anom", {
             type: "image",
             url: cv.toDataURL("image/png"),
@@ -128,57 +153,34 @@ export default function MapaNino() {
 
         if (rMar.ok) {
           const g = (await rMar.json()) as ClimaGrid;
-          climaRef.current = g;
-          const cargar = (svg: string) =>
-            new Promise<HTMLImageElement>((res, rej) => {
-              const img = new Image();
-              img.onload = () => res(img);
-              img.onerror = rej;
-              img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
-            });
-          const [sol, solNube, nube, lluviaImg] = await Promise.all([
-            cargar(SVG_SOL),
-            cargar(SVG_SOL_NUBE),
-            cargar(SVG_NUBE),
-            cargar(SVG_LLUVIA),
-          ]);
-          const icono = (lluvia: number | null, nubes: number | null) =>
-            (lluvia ?? 0) >= 2 ? lluviaImg : (nubes ?? 0) >= 70 ? nube : (nubes ?? 0) >= 40 ? solNube : sol;
-
-          const cols: number[] = [];
-          const rows: number[] = [];
-          g.lons.forEach((lo, i) => { if (lo >= -90 && lo <= -35) cols.push(i); });
-          g.lats.forEach((la, i) => { if (la >= -55 && la <= 10) rows.push(i); });
-          const CEL = 44;
-          const cv = document.createElement("canvas");
-          cv.width = cols.length * CEL;
-          cv.height = rows.length * CEL;
-          const c = cv.getContext("2d")!;
-          rows.forEach((r, ri) => {
-            cols.forEach((q, ci) => {
-              const img = icono(g.lluvia[r][q], g.nubes[r][q]);
-              const x = ci * CEL + (CEL - 34) / 2;
-              const y = (rows.length - 1 - ri) * CEL + (CEL - 34) / 2;
-              c.drawImage(img, x, y, 34, 34);
-            });
-          });
-          const sw: [number, number] = [g.lons[cols[0]] - g.paso / 2, g.lats[rows[0]] - g.paso / 2];
-          const ne: [number, number] = [
-            g.lons[cols[cols.length - 1]] + g.paso / 2,
-            g.lats[rows[rows.length - 1]] + g.paso / 2,
-          ];
-          map.addSource("clima", {
-            type: "image",
-            url: cv.toDataURL("image/png"),
-            coordinates: [sw, [ne[0], sw[1]], ne, [sw[0], ne[1]]],
-          });
-          map.addLayer({
-            id: "clima-fill",
-            type: "raster",
-            source: "clima",
-            layout: { visibility: "none" },
-            paint: { "raster-opacity": 0.95 },
-          });
+          const celda = (lat: number, lon: number) => {
+            const ri = Math.round((lat - g.lats[0]) / g.paso);
+            const qi = Math.round((lon - g.lons[0]) / g.paso);
+            if (ri < 0 || ri >= g.lats.length || qi < 0 || qi >= g.lons.length) return null;
+            return {
+              aire: g.aire[ri][qi],
+              nubes: g.nubes[ri][qi] ?? 0,
+              lluvia: g.lluvia[ri][qi] ?? 0,
+            };
+          };
+          for (const ciudad of CIUDADES) {
+            const d = celda(ciudad.lat, ciudad.lon);
+            if (!d) continue;
+            const el = document.createElement("div");
+            el.style.cssText =
+              "display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.9);border:2px solid #3d2b1f;border-radius:9999px;padding:1px 8px 1px 2px;font-weight:800;font-size:12px;color:#241a13;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap";
+            el.innerHTML = `${iconoDe(d.lluvia, d.nubes)}<span>${d.aire ?? "?"}°</span>`;
+            const mk = new maplibregl.Marker({ element: el })
+              .setLngLat([ciudad.lon, ciudad.lat])
+              .setPopup(
+                new maplibregl.Popup().setHTML(
+                  `<strong>${ciudad.nombre}</strong><br/>Aire: ${d.aire ?? "?"}° · ` +
+                    `${d.nubes >= 70 ? "Nublado" : d.nubes >= 40 ? "Sol y nubes" : "Despejado"} (${d.nubes}%)<br/>` +
+                    `${d.lluvia > 0 ? `Lluvia: ${d.lluvia} mm entre ayer y hoy.` : "Sin lluvia ayer ni hoy."}`
+                )
+              );
+            marcadoresClima.current.push(mk);
+          }
         }
       } catch {
         /* el mapa base sigue visible */
@@ -187,40 +189,23 @@ export default function MapaNino() {
       }
 
       map.on("click", (e) => {
-        if (vistaRef.current === "mar") {
-          const a = anomRef.current;
-          if (!a) return;
-          const pasoLat = a.lats.length > 1 ? a.lats[1] - a.lats[0] : 0.5;
-          const pasoLon = a.lons.length > 1 ? a.lons[1] - a.lons[0] : 0.5;
-          const ri = Math.round((e.lngLat.lat - a.lats[0]) / pasoLat);
-          const qi = Math.round((e.lngLat.lng - a.lons[0]) / pasoLon);
-          if (ri < 0 || ri >= a.lats.length || qi < 0 || qi >= a.lons.length) return;
-          const v = a.vals[ri][qi];
-          if (v === null || v === undefined) return;
-          const texto =
-            v >= 0.5
-              ? `Aquí el mar está ${v} grados más caliente que lo normal.`
-              : v <= -0.5
-              ? `Aquí el mar está ${Math.abs(v)} grados más frío que lo normal.`
-              : "Aquí el mar está normal.";
-          new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<strong>${texto}</strong>`).addTo(map);
-        } else {
-          const g = climaRef.current;
-          if (!g) return;
-          const ri = Math.round((e.lngLat.lat - g.lats[0]) / g.paso);
-          const qi = Math.round((e.lngLat.lng - g.lons[0]) / g.paso);
-          if (ri < 0 || ri >= g.lats.length || qi < 0 || qi >= g.lons.length) return;
-          const lluvia = g.lluvia[ri][qi] ?? 0;
-          const nubes = g.nubes[ri][qi] ?? 0;
-          new maplibregl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(
-              `<strong>Aire: ${g.aire[ri][qi] ?? "?"}°</strong><br/>` +
-                `${nubes >= 70 ? "Nublado" : nubes >= 40 ? "Sol y nubes" : "Despejado"} (${nubes}%)<br/>` +
-                `${lluvia > 0 ? `Lluvia: ${lluvia} mm entre ayer y hoy.` : "Sin lluvia ayer ni hoy."}`
-            )
-            .addTo(map);
-        }
+        if (vistaRef.current !== "mar") return;
+        const a = anomRef.current;
+        if (!a) return;
+        const pasoLat = a.lats.length > 1 ? a.lats[1] - a.lats[0] : 1;
+        const pasoLon = a.lons.length > 1 ? a.lons[1] - a.lons[0] : 1;
+        const ri = Math.round((e.lngLat.lat - a.lats[0]) / pasoLat);
+        const qi = Math.round((e.lngLat.lng - a.lons[0]) / pasoLon);
+        if (ri < 0 || ri >= a.lats.length || qi < 0 || qi >= a.lons.length) return;
+        const v = a.vals[ri][qi];
+        if (v === null || v === undefined) return;
+        const texto =
+          v >= 0.5
+            ? `Aquí el mar está ${v} grados más caliente que lo normal.`
+            : v <= -0.5
+            ? `Aquí el mar está ${Math.abs(v)} grados más frío que lo normal.`
+            : "Aquí el mar está normal.";
+        new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<strong>${texto}</strong>`).addTo(map);
       });
 
       const etiqueta = document.createElement("div");
@@ -241,6 +226,7 @@ export default function MapaNino() {
     return () => {
       map.remove();
       mapa.current = null;
+      marcadoresClima.current = [];
     };
   }, []);
 
@@ -249,8 +235,13 @@ export default function MapaNino() {
     const map = mapa.current;
     if (!map) return;
     const aplicar = () => {
-      if (map.getLayer("anom-fill")) map.setLayoutProperty("anom-fill", "visibility", vista === "mar" ? "visible" : "none");
-      if (map.getLayer("clima-fill")) map.setLayoutProperty("clima-fill", "visibility", vista === "clima" ? "visible" : "none");
+      if (map.getLayer("anom-fill")) {
+        map.setLayoutProperty("anom-fill", "visibility", vista === "mar" ? "visible" : "none");
+      }
+      for (const mk of marcadoresClima.current) {
+        if (vista === "clima") mk.addTo(map);
+        else mk.remove();
+      }
     };
     if (map.loaded()) aplicar();
     else map.once("load", aplicar);
@@ -371,7 +362,7 @@ export default function MapaNino() {
           <span>☁️ Nublado</span>
           <span>🌧️ Lluvia</span>
           <span className="ml-auto text-xs font-bold text-cocoa/55 dark:text-crema/55">
-            Toca el mapa para ver el detalle · Open-Meteo
+            Toca una ciudad para ver el detalle · Open-Meteo
           </span>
         </div>
       )}

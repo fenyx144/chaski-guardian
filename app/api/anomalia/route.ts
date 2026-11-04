@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 const ERDDAP =
   "https://coastwatch.pfeg.noaa.gov/erddap/griddap/NOAA_DHW.json" +
-  "?CRW_SSTANOMALY%5B(last)%5D%5B(-35):10:(8)%5D%5B(-100):10:(-60)%5D";
+  "?CRW_SSTANOMALY%5B(last)%5D%5B(-50):20:(15)%5D%5B(-160):20:(-60)%5D";
 
 interface Fila extends Array<unknown> {
   0: string;
