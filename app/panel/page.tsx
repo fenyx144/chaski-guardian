@@ -2,20 +2,22 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import type { Reporte, Mision } from "@/lib/store";
 import { SEMAFORO_META } from "@/lib/risk";
+import Boton from "@/components/Boton";
 
 const MapaPanel = dynamic(() => import("@/components/MapaPanel"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[420px] items-center justify-center rounded-xl border border-white/10 bg-andino-carbon">
+    <div className="flex h-[420px] items-center justify-center rounded-3xl border-2 border-cocoa bg-white font-bold dark:border-crema/25 dark:bg-carboncito">
       Cargando mapa…
     </div>
   ),
 });
 
 const ESTADO_TXT: Record<Mision["estado"], string> = {
-  pendiente: "⏳ Pendiente de aprobación humana",
+  pendiente: "⏳ Espera tu aprobación",
   aprobada: "✅ Aprobada",
   rechazada: "❌ Rechazada",
   bloqueada: "⛔ Bloqueada (zona prohibida)",
@@ -55,7 +57,7 @@ export default function PanelPage() {
       });
       const data = await res.json();
       if (data.aviso) setAviso(data.aviso);
-      else setAviso("Misión propuesta. Necesita tu aprobación abajo.");
+      else setAviso("Misión propuesta. Revísala y apruébala abajo.");
       await recargar();
     } catch {
       setAviso("No se pudo proponer la misión.");
@@ -82,113 +84,114 @@ export default function PanelPage() {
   };
 
   return (
-    <div className="space-y-6 pt-8">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="puntos space-y-8 pt-10"
+    >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-black">Panel del coordinador</h1>
-          <p className="mt-1 text-andino-arena/75">
-            Reportes de los vecinos, zonas por semáforo y misiones de cuadrilla
-            (siempre con aprobación humana).
+          <h1 className="font-display text-4xl md:text-5xl">Panel del coordinador</h1>
+          <p className="mt-2 max-w-xl font-medium text-cocoa/70 dark:text-crema/75">
+            Lo que reportan los vecinos y las cuadrillas en camino. Nada se mueve
+            sin tu aprobación.
           </p>
         </div>
-        <button
-          onClick={recargar}
-          className="rounded-full border border-white/20 px-5 py-2 text-sm font-bold hover:bg-white/10"
-        >
+        <Boton variante="linea" onClick={recargar} className="px-4 py-2 text-sm">
           ↻ Actualizar
-        </button>
+        </Boton>
       </div>
 
       {aviso && (
-        <p className="rounded-lg bg-andino-ocre/20 p-3 text-sm font-semibold text-andino-ocreClaro">
+        <p className="rounded-2xl border-2 border-cocoa bg-sol/40 p-3 text-sm font-extrabold dark:border-crema/40 dark:bg-sol/20">
           {aviso}
         </p>
       )}
 
       <MapaPanel reportes={reportes} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-10 lg:grid-cols-2">
         {/* Reportes */}
         <section>
-          <h2 className="text-xl font-black">Reportes ({reportes.length})</h2>
-          <div className="mt-3 space-y-3">
+          <h2 className="font-display text-2xl">Reportes ({reportes.length})</h2>
+          <div className="mt-2 divide-y-2 divide-dashed divide-cocoa/20 dark:divide-crema/20">
             {reportes.map((r) => (
-              <article key={r.id} className="rounded-xl border border-white/10 bg-andino-carbon p-4">
+              <article key={r.id} className="py-4">
                 <div className="flex items-center gap-2">
                   <span
-                    className="inline-block h-4 w-4 rounded-full"
+                    className="inline-block h-4 w-4 rounded-full border border-cocoa/40"
                     style={{ backgroundColor: SEMAFORO_META[r.semaforo].color }}
                   />
-                  <p className="font-bold">
+                  <p className="font-extrabold">
                     {r.tipo} · {r.score}/100
                   </p>
-                  <span className="ml-auto text-xs text-andino-arena/60">
+                  <span className="ml-auto text-xs font-semibold text-cocoa/55 dark:text-crema/60">
                     {r.fuente} · {new Date(r.fecha).toLocaleString("es-PE")}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-andino-arena/80">
+                <p className="mt-1 font-medium text-cocoa/75 dark:text-crema/80">
                   {r.descripcion || "(sin descripción)"}
                 </p>
-                <p className="mt-1 text-xs text-andino-arena/60">
-                  {r.quebradaId} · {r.lat.toFixed(4)}, {r.lon.toFixed(4)}
-                </p>
-                <button
+                <Boton
+                  variante="sol"
                   onClick={() => proponer(r.id)}
                   disabled={ocupado === r.id}
-                  className="mt-2 rounded-full bg-andino-ocre px-4 py-1.5 text-sm font-bold text-andino-negro hover:bg-andino-ocreClaro disabled:opacity-50"
+                  className="mt-2 px-4 py-1.5 text-sm"
                 >
-                  {ocupado === r.id ? "Proponiendo…" : "🚑 Proponer misión de cuadrilla"}
-                </button>
+                  {ocupado === r.id ? "Proponiendo…" : "Proponer misión de cuadrilla"}
+                </Boton>
               </article>
             ))}
             {reportes.length === 0 && (
-              <p className="text-sm text-andino-arena/60">Aún no hay reportes.</p>
+              <p className="py-4 font-semibold text-cocoa/55">Aún no hay reportes.</p>
             )}
           </div>
         </section>
 
         {/* Misiones */}
         <section>
-          <h2 className="text-xl font-black">Misiones de cuadrilla ({misiones.length})</h2>
-          <div className="mt-3 space-y-3">
+          <h2 className="font-display text-2xl">Cuadrillas ({misiones.length})</h2>
+          <div className="mt-2 divide-y-2 divide-dashed divide-cocoa/20 dark:divide-crema/20">
             {misiones.map((m) => (
-              <article key={m.id} className="rounded-xl border border-white/10 bg-andino-carbon p-4">
-                <p className="font-bold">{m.titulo}</p>
-                <p className="mt-1 text-sm">{ESTADO_TXT[m.estado]}</p>
+              <article key={m.id} className="py-4">
+                <p className="font-extrabold">{m.titulo}</p>
+                <p className="mt-1 text-sm font-bold">{ESTADO_TXT[m.estado]}</p>
                 {m.motivo && (
-                  <p className="mt-1 rounded bg-red-900/40 p-2 text-sm text-red-200">{m.motivo}</p>
+                  <p className="mt-2 rounded-2xl border-2 border-coral/60 bg-coral/10 p-2 text-sm font-bold">
+                    {m.motivo}
+                  </p>
                 )}
-                <p className="mt-1 text-xs text-andino-arena/60">
-                  {new Date(m.creada).toLocaleString("es-PE")} · {m.lat.toFixed(4)}, {m.lon.toFixed(4)}
-                </p>
                 {m.estado === "pendiente" && (
                   <div className="mt-2 flex gap-2">
-                    <button
+                    <Boton
+                      variante="hoja"
                       onClick={() => decidir(m.id, "aprobar")}
                       disabled={ocupado === m.id}
-                      className="rounded-full bg-andino-verde px-4 py-1.5 text-sm font-bold text-white hover:bg-andino-verdeOscuro disabled:opacity-50"
+                      className="px-4 py-1.5 text-sm"
                     >
                       Aprobar
-                    </button>
-                    <button
+                    </Boton>
+                    <Boton
+                      variante="linea"
                       onClick={() => decidir(m.id, "rechazar")}
                       disabled={ocupado === m.id}
-                      className="rounded-full border border-red-500 px-4 py-1.5 text-sm font-bold text-red-300 hover:bg-red-900/40 disabled:opacity-50"
+                      className="px-4 py-1.5 text-sm"
                     >
                       Rechazar
-                    </button>
+                    </Boton>
                   </div>
                 )}
               </article>
             ))}
             {misiones.length === 0 && (
-              <p className="text-sm text-andino-arena/60">
+              <p className="py-4 font-semibold text-cocoa/55 dark:text-crema/60">
                 Sin misiones. Propón una desde cualquier reporte.
               </p>
             )}
           </div>
         </section>
       </div>
-    </div>
+    </motion.div>
   );
 }

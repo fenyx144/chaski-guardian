@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { QUEBRADAS } from "@/lib/quebradas";
 import { SEMAFORO_META, type Semaforo } from "@/lib/risk";
+import Mascota from "@/components/Mascota";
 
 // Plan B: chat que simula WhatsApp para demos sin configuración externa.
 // Usa la misma lógica que el webhook (/api/risk, /api/analyze, /api/reportes).
@@ -127,41 +129,45 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pt-8">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="puntos mx-auto max-w-2xl space-y-4 pt-10"
+    >
       <div>
-        <h1 className="text-3xl font-black">Chat demo (WhatsApp)</h1>
-        <p className="mt-1 text-sm text-andino-arena/70">
-          Simula el bot de WhatsApp sin configurar nada: usa la misma lógica que
-          el webhook real.
+        <h1 className="font-display text-4xl md:text-5xl">Chat demo</h1>
+        <p className="mt-2 font-medium text-cocoa/70 dark:text-crema/70">
+          Como hablar con Yaku Guardian por WhatsApp, pero sin configurar nada.
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 shadow-xl">
+      <div className="overflow-hidden rounded-3xl border-2 border-cocoa shadow-pop dark:border-crema/25 dark:shadow-pop-noche">
         {/* Cabecera */}
-        <div className="flex items-center gap-3 bg-[#1f2c34] px-4 py-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-andino-verde text-xl font-black text-white">
-            Y
-          </span>
+        <div className="flex items-center gap-3 bg-sol/60 px-4 py-2 dark:bg-carboncito">
+          <Mascota animo="feliz" saludo size={52} />
           <div>
-            <p className="font-bold text-white">Yaku Guardian</p>
-            <p className="text-xs text-green-300">
+            <p className="font-display text-lg leading-tight">Yaku Guardian</p>
+            <p className="text-xs font-bold text-hoja">
               {escribiendo ? "escribiendo…" : "en línea"}
             </p>
           </div>
         </div>
 
         {/* Mensajes */}
-        <div className="chat-scroll h-[420px] space-y-2 overflow-y-auto bg-[#0b141a] bg-[radial-gradient(circle_at_20%_20%,rgba(47,158,68,0.08),transparent_50%)] p-4">
+        <div className="chat-scroll h-[420px] space-y-2 overflow-y-auto border-y-2 border-cocoa/15 bg-[#efeae2] p-4 dark:border-white/10 dark:bg-[#0b141a]">
           {mensajes.map((m) => (
             <div key={m.id} className={`flex ${m.de === "yo" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[80%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm shadow ${
-                  m.de === "yo" ? "bg-[#005c4b] text-white" : "bg-[#202c33] text-gray-100"
+                className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm font-medium shadow-sm ${
+                  m.de === "yo"
+                    ? "bg-[#d9fdd3] text-stone-900 dark:bg-[#005c4b] dark:text-white"
+                    : "bg-white text-stone-900 dark:bg-[#202c33] dark:text-gray-100"
                 }`}
               >
                 {m.imagen && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.imagen} alt="Foto enviada" className="mb-1 max-h-48 rounded" />
+                  <img src={m.imagen} alt="Foto enviada" className="mb-1 max-h-48 rounded-xl" />
                 )}
                 {m.ubicacion && <p>📍 {m.ubicacion}</p>}
                 {m.texto && <p>{m.texto}</p>}
@@ -170,21 +176,23 @@ export default function ChatPage() {
           ))}
           {escribiendo && (
             <div className="flex justify-start">
-              <div className="rounded-lg bg-[#202c33] px-4 py-2 text-sm text-gray-300">…</div>
+              <div className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-stone-500 dark:bg-[#202c33] dark:text-gray-300">
+                …
+              </div>
             </div>
           )}
           <div ref={finRef} />
         </div>
 
         {/* Entrada */}
-        <div className="space-y-2 bg-[#1f2c34] p-3">
-          <div className="flex items-center gap-2 text-sm">
-            <label className="text-gray-300">
+        <div className="space-y-2 bg-[#f0f2f5] p-3 dark:bg-[#1f2c34]">
+          <div className="flex items-center gap-2 text-sm font-bold">
+            <label className="text-stone-600 dark:text-gray-300">
               Mi quebrada:
               <select
                 value={quebradaId}
                 onChange={(e) => setQuebradaId(e.target.value)}
-                className="ml-2 rounded-lg bg-[#0b141a] p-1.5 text-white"
+                className="ml-2 rounded-xl border-2 border-cocoa/30 bg-white p-1.5 text-stone-900 dark:border-white/20 dark:bg-[#0b141a] dark:text-white"
               >
                 {QUEBRADAS.map((q) => (
                   <option key={q.id} value={q.id}>
@@ -198,14 +206,14 @@ export default function ChatPage() {
             <button
               onClick={enviarUbicacion}
               title="Enviar ubicación"
-              className="rounded-full bg-[#0b141a] px-3 py-2 text-lg hover:bg-white/10"
+              className="rounded-2xl border-2 border-cocoa/30 bg-white px-3 py-2 text-lg hover:bg-sol/50 dark:border-white/20 dark:bg-[#0b141a] dark:hover:bg-white/10"
             >
               📍
             </button>
             <button
               onClick={() => fotoRef.current?.click()}
               title="Enviar foto"
-              className="rounded-full bg-[#0b141a] px-3 py-2 text-lg hover:bg-white/10"
+              className="rounded-2xl border-2 border-cocoa/30 bg-white px-3 py-2 text-lg hover:bg-sol/50 dark:border-white/20 dark:bg-[#0b141a] dark:hover:bg-white/10"
             >
               📷
             </button>
@@ -221,17 +229,17 @@ export default function ChatPage() {
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && enviarTexto()}
               placeholder="Escribe un mensaje"
-              className="flex-1 rounded-full bg-[#0b141a] px-4 py-2 text-sm text-white placeholder-gray-400"
+              className="flex-1 rounded-2xl border-2 border-cocoa/30 bg-white px-4 py-2 text-sm font-semibold text-stone-900 placeholder:text-stone-400 dark:border-white/20 dark:bg-[#0b141a] dark:text-white dark:placeholder:text-gray-400"
             />
             <button
               onClick={enviarTexto}
-              className="rounded-full bg-andino-verde px-4 py-2 font-bold text-white hover:bg-andino-verdeOscuro"
+              className="rounded-2xl border-2 border-cocoa bg-hoja px-4 py-2 font-black text-white hover:brightness-110 dark:border-white/20"
             >
               ➤
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
