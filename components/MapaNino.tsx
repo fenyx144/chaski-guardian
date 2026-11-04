@@ -8,20 +8,19 @@ import Mascota from "@/components/Mascota";
 interface NinoData {
   oni: number;
   fase: "El Niño" | "La Niña" | "Neutral";
-  regiones: { n12: number; n3: number; n4: number; n34: number };
+}
+
+interface CeldaMar {
+  lat: number;
+  lon: number;
+  sst: number;
 }
 
 const AREQUIPA: [number, number] = [-71.54, -16.4];
 
-function colorAgua(a: number): string {
-  if (a >= 0.5) return "#ff5833";
-  if (a <= -0.5) return "#1f6fb5";
-  return "#e8dcc3";
-}
-
-function palabraAgua(a: number): string {
-  if (a >= 0.5) return "agua caliente";
-  if (a <= -0.5) return "agua fría";
+function palabraDe(sst: number): string {
+  if (sst >= 27) return "agua caliente";
+  if (sst < 22) return "agua fría";
   return "agua normal";
 }
 
@@ -41,6 +40,7 @@ export default function MapaNino() {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<maplibregl.Map | null>(null);
   const [datos, setDatos] = useState<NinoData | null>(null);
+  const [pintando, setPintando] = useState(true);
   const [avisoUbic, setAvisoUbic] = useState("");
   const marcadorUsuario = useRef<maplibregl.Marker | null>(null);
 
@@ -58,34 +58,33 @@ export default function MapaNino() {
 
     map.on("load", async () => {
       try {
-        const res = await fetch("/api/nino");
-        if (!res.ok) throw new Error();
-        const d = (await res.json()) as NinoData;
+        const [rNino, rMar] = await Promise.all([fetch("/api/nino"), fetch("/api/mar")]);
+        if (!rNino.ok || !rMar.ok) throw new Error();
+        const d = (await rNino.json()) as NinoData;
+        const m = (await rMar.json()) as { celdas: CeldaMar[]; paso: number };
         setDatos(d);
-        const zonas: [string, number, number[][][]][] = [
-          ["1+2", d.regiones.n12, [[[-90, 0], [-80, 0], [-80, -10], [-90, -10], [-90, 0]]]],
-          ["3", d.regiones.n3, [[[-150, 5], [-90, 5], [-90, -5], [-150, -5], [-150, 5]]]],
-          ["3.4", d.regiones.n34, [[[-170, 5], [-120, 5], [-120, -5], [-170, -5], [-170, 5]]]],
-          ["4a", d.regiones.n4, [[[160, 5], [180, 5], [180, -5], [160, -5], [160, 5]]]],
-          ["4b", d.regiones.n4, [[[-180, 5], [-150, 5], [-150, -5], [-180, -5], [-180, 5]]]],
-        ];
+        const medio = m.paso / 2;
         map.addSource("mar", {
           type: "geojson",
           data: {
             type: "FeatureCollection",
-            features: zonas.map(([, v, coords]) => ({
+            features: m.celdas.map((c) => ({
               type: "Feature",
               properties: {
-                palabra: palabraAgua(v),
-                color: colorAgua(v),
-                frase:
-                  v >= 0.5
-                    ? "Aquí el agua está caliente."
-                    : v <= -0.5
-                    ? "Aquí el agua está fría."
-                    : "Aquí el agua está normal.",
+                sst: c.sst,
+                palabra: palabraDe(c.sst),
+                frase: `Aquí el agua está a ${c.sst} grados: ${palabraDe(c.sst)}.`,
               },
-              geometry: { type: "Polygon", coordinates: coords },
+              geometry: {
+                type: "Polygon",
+                coordinates: [[
+                  [c.lon - medio, c.lat - medio],
+                  [c.lon + medio, c.lat - medio],
+                  [c.lon + medio, c.lat + medio],
+                  [c.lon - medio, c.lat + medio],
+                  [c.lon - medio, c.lat - medio],
+                ]],
+              },
             })),
           } as unknown as GeoJSON.FeatureCollection,
         });
@@ -93,24 +92,10 @@ export default function MapaNino() {
           id: "mar-fill",
           type: "fill",
           source: "mar",
-          paint: { "fill-color": ["get", "color"], "fill-opacity": 0.6 },
-        });
-        map.addLayer({
-          id: "mar-line",
-          type: "line",
-          source: "mar",
-          paint: { "line-color": "#3d2b1f", "line-width": 1.5 },
-        });
-        map.addLayer({
-          id: "mar-label",
-          type: "symbol",
-          source: "mar",
-          layout: {
-            "text-field": ["get", "palabra"],
-            "text-size": 12,
-            "text-allow-overlap": true,
+          paint: {
+            "fill-color": ["step", ["get", "sst"], "#1f6fb5", 22, "#e8dcc3", 27, "#ff5833"],
+            "fill-opacity": 0.6,
           },
-          paint: { "text-color": "#241a13", "text-halo-color": "#ffffff", "text-halo-width": 2 },
         });
         map.on("click", "mar-fill", (e) => {
           const f = e.features?.[0];
@@ -119,6 +104,8 @@ export default function MapaNino() {
         });
       } catch {
         /* el mapa base sigue visible */
+      } finally {
+        setPintando(false);
       }
 
       const el = document.createElement("div");
@@ -184,7 +171,12 @@ export default function MapaNino() {
       )}
 
       <div className="relative overflow-hidden rounded-3xl border-2 border-cocoa shadow-pop dark:border-crema/25 dark:shadow-pop-noche">
-        <div ref={contenedor} className="h-[400px] w-full md:h-[480px]" aria-label="Mapa del estado del mar" />
+        <div ref={contenedor} className="h-[400px] w-full md:h-[480px]" aria-label="Mapa de la temperatura del mar" />
+        {pintando && (
+          <p className="absolute left-3 top-3 rounded-xl bg-black/60 px-3 py-1.5 text-xs font-extrabold text-white">
+            Pintando el mar…
+          </p>
+        )}
         <button
           onClick={ubicarme}
           className="absolute bottom-4 right-3 rounded-2xl border-2 border-cocoa bg-sol px-4 py-2 text-sm font-extrabold text-cocoa shadow-pop-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
@@ -204,15 +196,15 @@ export default function MapaNino() {
           Agua caliente
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm border border-cocoa/40 bg-[#1f6fb5]" />
-          Agua fría
-        </span>
-        <span className="flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded-sm border border-cocoa/40 bg-[#e8dcc3]" />
           Agua normal
         </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded-sm border border-cocoa/40 bg-[#1f6fb5]" />
+          Agua fría
+        </span>
         <span className="ml-auto text-xs font-bold text-cocoa/55 dark:text-crema/55">
-          Toca el mar para saber cómo está · Datos: NOAA
+          Toca el mar para saber cómo está · Mar: Open-Meteo
         </span>
       </div>
     </div>
