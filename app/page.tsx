@@ -14,6 +14,7 @@ import Boton from "@/components/Boton";
 import { Resaltado, Garabato, Nota } from "@/components/Amable";
 import { QUEBRADAS } from "@/lib/quebradas";
 import { SEMAFORO_META, type Semaforo } from "@/lib/risk";
+import { useSimulacroLocal } from "@/components/SimulacroLocal";
 import { useIdioma, type Clave } from "@/lib/i18n";
 
 interface RiesgoApi {
@@ -61,6 +62,9 @@ const aparece = {
 
 export default function Home() {
   const { t, lang } = useIdioma();
+  const { activo: simulacro, setActivo: setSimulacro } = useSimulacroLocal();
+  // El simulacro es solo de esta visita a la portada: al salir, se apaga.
+  useEffect(() => () => setSimulacro(false), [setSimulacro]);
   const [quebradaId, setQuebradaId] = useState(QUEBRADAS[0].id);
   const [riesgo, setRiesgo] = useState<RiesgoApi | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -91,7 +95,7 @@ export default function Home() {
     setCargando(true);
     try {
       const q = QUEBRADAS.find((x) => x.id === quebradaId) ?? QUEBRADAS[0];
-      const res = await fetch(`/api/risk?lat=${q.lat}&lon=${q.lon}&lang=${lang}`);
+      const res = await fetch(`/api/risk?lat=${q.lat}&lon=${q.lon}&lang=${lang}${simulacro ? "&demo=rojo" : ""}`);
       const data = (await res.json()) as RiesgoApi;
       setRiesgo(data);
     } catch {
@@ -99,7 +103,7 @@ export default function Home() {
     } finally {
       setCargando(false);
     }
-  }, [quebradaId, lang]);
+  }, [quebradaId, lang, simulacro]);
 
   useEffect(() => {
     cargarRiesgo();
@@ -186,6 +190,17 @@ export default function Home() {
 
   return (
     <div className="puntos space-y-14 pt-10">
+      {simulacro && (
+        <div className="fixed inset-x-0 top-0 z-[70] flex flex-wrap items-center justify-center gap-3 bg-red-600 px-4 py-2 text-white shadow-md">
+          <span className="text-sm font-black tracking-wide">{t("simulacro.barra")}</span>
+          <button
+            onClick={() => setSimulacro(false)}
+            className="rounded-full bg-white px-3 py-1 text-xs font-black text-red-700"
+          >
+            {t("simulacro.salir")}
+          </button>
+        </div>
+      )}
       {/* Héroe */}
       <section className="max-w-3xl">
         <div>
@@ -277,6 +292,9 @@ export default function Home() {
               </option>
             ))}
           </select>
+          <Boton variante={simulacro ? "tinta" : "linea"} onClick={() => setSimulacro(!simulacro)} className="px-4 py-2 text-sm">
+            {simulacro ? t("simulacro.salir") : t("simulacro.boton")}
+          </Boton>
         </div>
         <p className="mt-2 max-w-3xl font-medium text-cocoa/70 dark:text-crema/70">{t("fusion.sub")}</p>
         <div className="mt-5 grid gap-5 lg:grid-cols-3">

@@ -4,7 +4,7 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Proveedores from "@/components/Proveedores";
 import Pie from "@/components/Pie";
-import ChatWidget from "@/components/ChatWidget";
+import SimulacroLocal from "@/components/SimulacroLocal";
 
 const display = Bowlby_One({
   subsets: ["latin"],
@@ -45,9 +45,10 @@ export default function RootLayout({
       <body className="min-h-screen">
         <Proveedores>
           <NavBar />
-          <main className="mx-auto w-full max-w-6xl px-4 pb-16">{children}</main>
-          <Pie />
-          <ChatWidget />
+          <SimulacroLocal>
+            <main className="mx-auto w-full max-w-6xl px-4 pb-16">{children}</main>
+            <Pie />
+          </SimulacroLocal>
         </Proveedores>
       </body>
     </html>

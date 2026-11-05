@@ -40,7 +40,7 @@ During El Niño, heavy rain turns dry ravines into torrents (*huaicos*) within m
 | Route | What it does |
 |---|---|
 | `/` | Live El Niño monitoring (sea temperature and anomaly, rain and clouds), a "How is my ravine?" traffic light with 3D terrain and satellite view, neighbor reports on a map, and the "Habla con Chaski" assistant. |
-| `/panel` | Coordinator panel: map with reports and no-go zones, crews, registered volunteers, Muse Spark mission proposals with Approve / Reject. |
+| `/panel` | Coordinator panel (demo access — user: `coordinador`, password: `demo` at `/panel-login`): map with reports and no-go zones, crews, registered volunteers, Muse Spark mission proposals with Approve / Reject. |
 | `/chat` | A chat that simulates WhatsApp (bubbles, photo, location) using the same logic as the real webhook. |
 
 Use the **"Quiero ser voluntario"** button to sign up as a volunteer; volunteers appear in the coordinator panel and can be assigned to proposed missions.
@@ -78,7 +78,7 @@ Models are called through Meta Model API (`https://api.meta.ai/v1`) with `MODEL_
 - The traffic light is a **risk-prioritization estimate**, not a forecast of a specific huaico, and it has not been validated against past events.
 - Slopes are approximate; the three example ravines are **Quebrada San Lázaro, Quebrada de Añashuayco and Quebrada El Pato**.
 - The WhatsApp Cloud API webhook is implemented (`app/api/whatsapp`), but the demo uses the simulated `/chat` unless a real number is configured.
-- The coordinator panel has **no login** in this demo; production use would require authentication for authorized coordinators.
+- El panel usa un acceso de demostración con credenciales públicas (usuario: coordinador, contraseña: demo); no es autenticación de producción.
 - Voice transcription is not yet connected in the chat UI.
 - Crews are sample data; there is no integration yet with the official INDECI or COER shelter and brigade registries (planned).
 
@@ -126,6 +126,7 @@ See [`.env.example`](.env.example).
 | `GET/POST/PATCH /api/misiones` | Missions with human approval and no-go zone blocking. |
 | `GET /api/mar`, `/api/anomalia`, `/api/nino` | Ocean and El Niño data for the live monitor. |
 | `GET/POST /api/whatsapp` | WhatsApp Cloud API webhook (verification and messages). |
+| `POST /api/panel-login`, `POST /api/panel-logout` | Demo access for the coordinator panel (public credentials: `coordinador` / `demo`); sets/clears the `chaski_panel` session cookie. Panel APIs (`/api/cuadrillas`, `/api/misiones`, practice mutations, volunteer/subscriber lists) require it. |
 
 ## Tech stack
 

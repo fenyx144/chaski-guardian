@@ -63,7 +63,7 @@ async function convertirAWav(blob: Blob): Promise<Blob> {
 let siguienteId = 1;
 const mk = (m: Omit<Mensaje, "id">): Mensaje => ({ ...m, id: siguienteId++ });
 
-export default function ChatWidget() {
+export default function ChatWidget({ simulacro = false }: { simulacro?: boolean }) {
   const { t, lang } = useIdioma();
   const [abierto, setAbierto] = useState(true);
   // La ventana permanece abierta: recuerda si quedó abierta al navegar o recargar.
@@ -127,7 +127,7 @@ export default function ChatWidget() {
     decir({ de: "yo", ubicacion: `${q.nombre} (${q.lat.toFixed(4)}, ${q.lon.toFixed(4)})` });
     setEscribiendo(true);
     try {
-      const res = await fetch(`/api/risk?lat=${q.lat}&lon=${q.lon}&lang=${lang}`);
+      const res = await fetch(`/api/risk?lat=${q.lat}&lon=${q.lon}&lang=${lang}${simulacro ? "&demo=rojo" : ""}`);
       const r = (await res.json()) as { score: number | null; semaforo: Semaforo; explicacion: string };
       decir({
         de: "chaski",
@@ -135,17 +135,20 @@ export default function ChatWidget() {
           `${q.nombre}\n${t(`semaforo.${r.semaforo}` as "semaforo.verde")} ${r.score != null ? `(${r.score}/100)` : "(sin puntaje)"}\n${r.explicacion}` +
           `\n${lang === "en" ? "What to do" : "Qué hacer"}: ${t(`accion.${r.semaforo}` as "accion.verde")}`,
       });
-      await fetch("/api/reportes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lat: q.lat,
-          lon: q.lon,
-          quebradaId: q.id,
-          tipo: "consulta",
-          descripcion: "Consulta desde el chatbot.",
-        }),
-      }).catch(() => undefined);
+      // En simulacro no se guarda ningun reporte: es solo para mirar.
+      if (!simulacro) {
+        await fetch("/api/reportes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: q.lat,
+            lon: q.lon,
+            quebradaId: q.id,
+            tipo: "consulta",
+            descripcion: "Consulta desde el chatbot.",
+          }),
+        }).catch(() => undefined);
+      }
     } catch {
       decir({ de: "chaski", texto: lang === "en" ? "Couldn't check the traffic light." : "No pude consultar el semáforo." });
     } finally {
@@ -200,6 +203,17 @@ export default function ChatWidget() {
 
   const enviarAlerta = async () => {
     if (enviandoAlerta) return;
+    // En simulacro el SOS no envia nada real: solo avisa que es practica.
+    if (simulacro) {
+      decir({
+        de: "chaski",
+        texto:
+          lang === "en"
+            ? "Drill: no real alert was sent."
+            : "Simulacro: no se envió ninguna alerta real.",
+      });
+      return;
+    }
     setEnviandoAlerta(true);
     const q = QUEBRADAS.find((x) => x.id === quebradaId) ?? QUEBRADAS[0];
     decir({ de: "yo", texto: "🚨 ¡ALERTA! Necesito ayuda" });
@@ -244,7 +258,7 @@ export default function ChatWidget() {
         });
         return;
       }
-      const res = await fetch(`/api/risk?lat=${lat}&lon=${lon}&lang=${lang}`);
+      const res = await fetch(`/api/risk?lat=${lat}&lon=${lon}&lang=${lang}${simulacro ? "&demo=rojo" : ""}`);
       const r = (await res.json()) as { semaforo: Semaforo };
       decir({
         de: "chaski",

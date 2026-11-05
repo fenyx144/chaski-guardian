@@ -115,7 +115,7 @@ export default function PanelPage() {
       setAviso(data.aviso ?? data.error ?? "");
       await recargar();
     } catch {
-      setAviso("No se pudo cambiar la simulación.");
+      setAviso("No se pudo cambiar la práctica.");
     } finally {
       setSimulando(false);
     }
@@ -156,6 +156,13 @@ export default function PanelPage() {
     }
   };
 
+  const cerrarSesion = async () => {
+    try {
+      await fetch("/api/panel-logout", { method: "POST" });
+    } catch { /* la cookie se borra al volver al login de todos modos */ }
+    window.location.href = "/panel-login";
+  };
+
   const decidir = async (id: string, accion: "aprobar" | "rechazar") => {
     setOcupado(id);
     try {
@@ -188,9 +195,14 @@ export default function PanelPage() {
             sin tu aprobación.
           </p>
         </div>
-        <Boton variante="linea" onClick={recargar} className="px-4 py-2 text-sm">
-          ↻ Actualizar
-        </Boton>
+        <div className="flex flex-wrap gap-2">
+          <Boton variante="linea" onClick={recargar} className="px-4 py-2 text-sm">
+            ↻ Actualizar
+          </Boton>
+          <Boton variante="linea" onClick={cerrarSesion} className="px-4 py-2 text-sm">
+            Cerrar sesión
+          </Boton>
+        </div>
       </div>
 
       {aviso && (
@@ -199,14 +211,14 @@ export default function PanelPage() {
         </p>
       )}
 
-      {/* Simulación de crecida: práctica con alertas de WhatsApp */}
+      {/* Práctica de alerta a los vecinos con alertas de WhatsApp */}
       <section className="rounded-3xl border-2 border-dashed border-coral/70 bg-coral/5 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl">
-              Simulación de crecida{" "}
+              Práctica de alerta a los vecinos{" "}
               {simulacion.activa && (
-                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-black text-white">SIMULACIÓN ACTIVA</span>
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-black text-white">PRÁCTICA ACTIVA</span>
               )}
             </h2>
             <p className="mt-1 max-w-2xl text-sm font-semibold text-cocoa/65 dark:text-crema/70">
@@ -216,20 +228,25 @@ export default function PanelPage() {
               Sin credenciales de WhatsApp, el envío queda marcado “simulado”.
             </p>
           </div>
-          <Boton
-            variante={simulacion.activa ? "linea" : "tinta"}
-            onClick={alternarSimulacion}
-            disabled={simulando}
-            className="px-4 py-2 text-sm"
-          >
-            {simulando ? "Trabajando…" : simulacion.activa ? "Detener simulación" : "🌊 Simular crecida"}
-          </Boton>
+          <div className="flex flex-col items-start gap-2">
+            <Boton
+              variante={simulacion.activa ? "linea" : "tinta"}
+              onClick={alternarSimulacion}
+              disabled={simulando}
+              className="px-4 py-2 text-sm"
+            >
+              {simulando ? "Trabajando…" : simulacion.activa ? "Detener práctica" : "Practicar alerta a los vecinos"}
+            </Boton>
+            <p className="max-w-xs text-xs font-bold text-cocoa/60 dark:text-crema/65">
+              Simulacro del coordinador: Muse redacta la alerta y tú decides si se envía. No es una alerta real.
+            </p>
+          </div>
         </div>
         {simulacion.alertas.map((a) => (
           <article key={a.quebradaId} className="mt-3 rounded-2xl border-2 border-cocoa/20 bg-white p-4 dark:border-crema/20 dark:bg-carboncito">
             <p className="font-extrabold">
               🔴 {a.nombre}{" "}
-              <span className="rounded-full bg-red-600/15 px-2 py-0.5 text-xs font-black text-red-700 dark:text-red-300">SIMULACIÓN</span>{" "}
+              <span className="rounded-full bg-red-600/15 px-2 py-0.5 text-xs font-black text-red-700 dark:text-red-300">PRÁCTICA</span>{" "}
               <span className="text-sm font-bold text-cocoa/60 dark:text-crema/65">
                 {(a.estado ?? "pendiente") === "pendiente"
                   ? "⏳ Pendiente de tu aprobación: aún no se envía nada"

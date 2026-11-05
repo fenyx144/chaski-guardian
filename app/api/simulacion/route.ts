@@ -5,16 +5,17 @@ import { sendWhatsApp } from "@/lib/whatsapp";
 import { obtenerSimulacion, fijarSimulacion } from "@/lib/store";
 import type { AlertaSimulada } from "@/lib/simulacion-estado";
 
-// Simulación de crecida (temporal, solo en memoria): pone las quebradas en
-// rojo, Muse redacta la alerta en español simple y se "envía" por WhatsApp
-// a los suscriptores de cada quebrada. Sin credenciales, queda "simulado".
+// Practica de alerta del coordinador (temporal, solo en memoria): pone las
+// quebradas en rojo, Muse redacta la alerta en español simple y se "envía"
+// por WhatsApp a los suscriptores de cada quebrada. Sin credenciales, queda
+// marcado "simulado".
 
 async function redactarAlerta(q: Quebrada): Promise<string> {
   const respaldo =
-    `⚠️ SIMULACIÓN · Chaski Guardian: está bajando mucha agua por ${q.nombre} (${q.distrito}). ` +
+    `⚠️ SIMULACRO · Chaski Guardian: está bajando mucha agua por ${q.nombre} (${q.distrito}). ` +
     `Qué hacer: no cruces el cauce ni la torrentera, aléjate del agua ahora. ` +
     `Ve a la zona alta más cercana, lejos del cauce, y avisa a tus vecinos. ` +
-    `Defensa Civil 115, Bomberos 116, Policía 105 (el 119 no es rescate: buzón de voz para tu familia). Esto es una simulación de práctica.`;
+    `Defensa Civil 115, Bomberos 116, Policía 105 (el 119 no es rescate: buzón de voz para tu familia). Esto es un simulacro de práctica.`;
   const apiKey = process.env.MODEL_API_KEY;
   if (!apiKey) return respaldo;
   const baseUrl = (process.env.MODEL_BASE_URL || "https://api.meta.ai/v1").replace(/\/$/, "");
@@ -32,13 +33,13 @@ async function redactarAlerta(q: Quebrada): Promise<string> {
               "Eres Chaski Guardian, alerta temprana comunitaria en Arequipa, Perú. " +
               "Escribes alertas CORTAS en español muy simple, pensadas para WhatsApp y para " +
               "personas asustadas. Nada de tecnicismos. Empieza siempre con: " +
-              "'⚠️ SIMULACIÓN · Chaski Guardian:'. Incluye en 3 frases breves: qué está " +
+              "'⚠️ SIMULACRO · Chaski Guardian:'. Incluye en 3 frases breves: qué está " +
               "pasando, qué hacer ahora y a dónde ir. Cierra con: 'Defensa Civil 115, Bomberos 116, Policía 105. El 119 no es una central de rescate: deja un mensaje de voz a tu familia si las líneas están saturadas.'",
           },
           {
             role: "user",
             content:
-              `Simulación de crecida en ${q.nombre} (${q.distrito}). Es una ${q.tipo.toLowerCase()}: ${q.regimen} ` +
+              `Simulacro de crecida en ${q.nombre} (${q.distrito}). Es una ${q.tipo.toLowerCase()}: ${q.regimen} ` +
               `Cuando se activa arrastra: ${q.arrastra} Pendiente ~${q.pendienteEstimada}°. ` +
               "Redacta la alerta para los vecinos suscritos de esta quebrada.",
           },
@@ -55,7 +56,7 @@ async function redactarAlerta(q: Quebrada): Promise<string> {
   }
 }
 
-// GET /api/simulacion -> estado actual de la simulación.
+// GET /api/simulacion -> estado actual de la práctica.
 export async function GET() {
   return NextResponse.json({ simulacion: await obtenerSimulacion() });
 }
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
     await fijarSimulacion({ activa: false, quebradasRojas: [], alertas: [], iniciada: null });
     return NextResponse.json({
       simulacion: await obtenerSimulacion(),
-      aviso: "Simulación detenida. Los semáforos volvieron a su estado real.",
+      aviso: "Práctica detenida. Los semáforos volvieron a su estado real.",
     });
   }
   if (body.accion !== "activar") {
@@ -111,7 +112,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     simulacion: await obtenerSimulacion(),
     aviso:
-      "SIMULACIÓN activa: las quebradas están en rojo. Muse ya redactó las alertas, " +
+            "Práctica activa: las quebradas están en rojo. Muse ya redactó las alertas, " +
       "pero nadie las recibió: quedan pendientes de tu aprobación.",
   });
 }
@@ -134,7 +135,7 @@ export async function PATCH(req: Request) {
   const sim = await obtenerSimulacion();
   const alerta = sim.alertas.find((a) => a.quebradaId === body.quebradaId);
   if (!alerta) {
-    return NextResponse.json({ error: "Alerta no encontrada. Activa la simulación primero." }, { status: 404 });
+    return NextResponse.json({ error: "Alerta no encontrada. Activa la práctica primero." }, { status: 404 });
   }
   if (alerta.estado !== "pendiente") {
     return NextResponse.json({ error: `Esa alerta ya fue ${alerta.estado}.` }, { status: 409 });

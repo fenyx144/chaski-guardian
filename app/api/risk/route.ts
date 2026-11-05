@@ -68,7 +68,7 @@ export async function GET(req: Request) {
       semaforo: "rojo" as const,
       score: Math.max(r.score, 85),
       explicacion:
-        "MODO DEMO · Simulación de lluvia fuerte: semáforo forzado a rojo para la demostración. " +
+        "SIMULACRO · Lluvia fuerte de práctica: semáforo forzado a rojo. " +
         r.explicacion,
       quebrada: q,
       lluvia24h: 30,
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
     });
   }
 
-  // SIMULACIÓN de crecida activa desde el panel: esta quebrada se ve en rojo.
+  // SIMULACRO del coordinador activo desde el panel: esta quebrada se ve en rojo.
   const sim = await obtenerSimulacion();
   if (sim.activa && sim.quebradasRojas.includes(q.id)) {
     return NextResponse.json({
@@ -89,8 +89,8 @@ export async function GET(req: Request) {
       semaforo: "rojo" as const,
       explicacion:
         idioma === "en"
-          ? `SIMULATION (not real): flood drill for ${q.nombre}. The coordinator activated the red alert from the panel.`
-          : `SIMULACIÓN (no es real): práctica de crecida en ${q.nombre}. El coordinador activó la alerta roja desde el panel.`,
+          ? `DRILL (not real): flood drill for ${q.nombre}. The coordinator activated the red alert from the panel.`
+          : `SIMULACRO (no es real): práctica de crecida en ${q.nombre}. El coordinador activó la alerta roja desde el panel.`,
       quebrada: q,
       lluvia24h: 30,
       lluvia48h: 40,
@@ -100,8 +100,8 @@ export async function GET(req: Request) {
       simulacion: true,
       nota:
         idioma === "en"
-          ? "SIMULATION, not an official alert."
-          : "SIMULACIÓN, no es una alerta oficial.",
+          ? "DRILL, not an official alert."
+          : "SIMULACRO, no es una alerta oficial.",
     });
   }
 
