@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { calcularRiesgo } from "@/lib/risk";
+import { calcularRiesgo, SEMAFORO_META } from "@/lib/risk";
 import { quebradaMasCercana } from "@/lib/quebradas";
 import { obtenerSimulacion } from "@/lib/store";
 import { obtenerLluvia } from "@/lib/openmeteo";
@@ -116,6 +116,7 @@ export async function GET(req: Request) {
         lluvia48h,
         pendiente: q.pendienteEstimada,
         distanciaKm: distKm,
+        caudalDisponible: caudal.hoy !== null && caudal.max7 !== null,
       },
       idioma
     );
@@ -133,18 +134,22 @@ export async function GET(req: Request) {
           : "ESTIMACIÓN ilustrativa con pendiente aproximada, no una predicción oficial.",
     });
   } catch (e) {
+    // Sin Open-Meteo NO se calcula nada con lluvia 0: se devuelve
+    // "desconocido" con score null, jamas un verde tranquilizador.
     const caudal = await caudalRio(lat, lon);
-    const r = calcularRiesgo(
-      { lluvia24h: 0, lluvia48h: 0, pendiente: q.pendienteEstimada, distanciaKm: distKm },
-      idioma
-    );
     return NextResponse.json({
-      ...r,
+      score: null,
+      semaforo: "desconocido" as const,
       explicacion:
-        "Sin conexión a Open-Meteo; estimación parcial solo con pendiente. " + r.explicacion,
+        idioma === "en"
+          ? "There is no rain data right now. This does NOT mean it is safe: check SENAMHI warnings and the state of the channel."
+          : idioma === "qu"
+          ? "Kunan para willakuy mana kanchu. Mana segurochu nispa niwanchikchu: SENAMHI willakuykunata hinaspa wayqupa kachkanta qhaway."
+          : SEMAFORO_META.desconocido.accion,
+      datosFaltantes: ["lluvia"],
       quebrada: q,
-      lluvia24h: 0,
-      lluvia48h: 0,
+      lluvia24h: null,
+      lluvia48h: null,
       distanciaKm: distKm,
       caudal,
       openMeteoOk: false,

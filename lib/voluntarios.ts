@@ -18,13 +18,27 @@ export interface Voluntario {
 
 const RUTA = path.join(process.cwd(), "data", "voluntarios.json");
 
+let memoria: Voluntario[] | null = null;
+
 export async function listarVoluntarios(): Promise<Voluntario[]> {
+  if (memoria) return memoria;
   try {
     const raw = await fs.readFile(RUTA, "utf-8");
     const data = JSON.parse(raw) as Voluntario[];
-    return Array.isArray(data) ? data : [];
+    memoria = Array.isArray(data) ? data : [];
   } catch {
-    return [];
+    memoria = [];
+  }
+  return memoria;
+}
+
+async function persistir(lista: Voluntario[]): Promise<void> {
+  memoria = lista;
+  try {
+    await fs.mkdir(path.dirname(RUTA), { recursive: true });
+    await fs.writeFile(RUTA, JSON.stringify(lista, null, 2), "utf-8");
+  } catch {
+    // Disco de solo lectura (p. ej. Vercel): queda en memoria.
   }
 }
 
@@ -37,9 +51,7 @@ export async function guardarVoluntario(
     id: `vol-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     fecha: new Date().toISOString(),
   };
-  lista.unshift(nuevo);
-  await fs.mkdir(path.dirname(RUTA), { recursive: true });
-  await fs.writeFile(RUTA, JSON.stringify(lista, null, 2), "utf-8");
+  await persistir([nuevo, ...lista]);
   return nuevo;
 }
 

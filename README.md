@@ -86,7 +86,7 @@ Models are called through Meta Model API (`https://api.meta.ai/v1`) with `MODEL_
 
 - The model **never assigns anyone on its own**: every mission needs explicit human approval.
 - **No-go zones** (`data/zonas-prohibidas.json`) are hard rules enforced in code, before the model is consulted.
-- Unknown or missing data produces a visible warning, not an invented answer.
+- Unknown or missing data (rain, river flow, or distance) produces a visible "insufficient information" warning — never an invented answer or a reassuring green light.
 
 ## Run it locally
 

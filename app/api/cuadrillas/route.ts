@@ -95,7 +95,7 @@ async function preguntarAMuse(
             role: "user",
             content:
               `Reporte en ROJO: tipo=${reporte.tipo}, descripción=${reporte.descripcion}, ` +
-              `puntaje=${reporte.score}/100, quebrada=${reporte.quebradaId}.\n` +
+              `puntaje=${reporte.score ?? "sin puntaje"}, quebrada=${reporte.quebradaId}.\n` +
               `Cuadrillas (datos de ejemplo): ${JSON.stringify(cuadrillas)}\n` +
               `Voluntarios inscritos: ${JSON.stringify(voluntarios)}\n` +
               "Propón cuadrilla, voluntarios, motivo y equipo necesario.",

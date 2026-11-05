@@ -63,7 +63,7 @@ async function textoRiesgo(lat: number, lon: number): Promise<string> {
   } catch {
     return (
       `Chaski Guardian · ${q.nombre}: no pude consultar la lluvia ahora mismo. ` +
-      `Si ves el cauce crecido, aléjate a zona alta y avisa al 119.`
+      `Si ves el cauce crecido, aléjate a zona alta. Defensa Civil 115, Bomberos 116, Policía 105 (el 119 no es rescate: buzón de voz para tu familia).`
     );
   }
 }
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
           from,
           "Recibí tu foto 📷. Para analizarla necesito que la subas también en la web de Chaski Guardian " +
             "(o escríbeme qué se ve: desborde, deslizamiento, vía cortada o vivienda afectada). " +
-            "Si hay peligro inmediato, llama al 119."
+            "Si hay peligro inmediato, llama a Defensa Civil 115, Bomberos 116 o Policía 105. El 119 no es rescate: deja un mensaje de voz a tu familia si las líneas están saturadas."
         );
       } else if (m.type === "text") {
         const texto = (m.text?.body ?? "").toLowerCase();

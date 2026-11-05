@@ -17,11 +17,12 @@ import { SEMAFORO_META, type Semaforo } from "@/lib/risk";
 import { useIdioma, type Clave } from "@/lib/i18n";
 
 interface RiesgoApi {
-  score: number;
+  score: number | null;
   semaforo: Semaforo;
   explicacion: string;
-  lluvia24h?: number;
-  lluvia48h?: number;
+  datosFaltantes?: string[];
+  lluvia24h?: number | null;
+  lluvia48h?: number | null;
   openMeteoOk?: boolean;
   distanciaKm?: number;
   caudal?: { hoy: number | null; max7: number | null };
@@ -104,7 +105,7 @@ export default function Home() {
     cargarRiesgo();
   }, [cargarRiesgo]);
 
-  const semaforo: Semaforo = riesgo?.semaforo ?? "verde";
+  const semaforo: Semaforo = riesgo?.semaforo ?? "desconocido";
   const meta = SEMAFORO_META[semaforo];
 
   const onFoto = (f: File | undefined) => {
@@ -287,19 +288,24 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <span className="inline-block h-12 w-12 shrink-0 rounded-full border-2 border-cocoa" style={{ backgroundColor: meta.color }} aria-label={t(`semaforo.${semaforo}` as Clave)} />
                 <div>
-                  <p className="font-display text-3xl leading-none">{cargando ? "…" : riesgo?.score}<span className="text-base text-cocoa/50 dark:text-crema/50">/100</span></p>
+                  <p className="font-display text-3xl leading-none">{cargando ? "…" : semaforo === "insuficiente" || semaforo === "desconocido" || riesgo?.score == null ? "—" : riesgo?.score}<span className="text-base text-cocoa/50 dark:text-crema/50">/100</span></p>
                   <p className="font-extrabold" style={{ color: meta.color }}>{cargando ? t("semaforo.consultando") : t(`semaforo.${semaforo}` as Clave)}</p>
                 </div>
                 <Mascota animo={animoDe(semaforo)} size={56} className="ml-auto" />
               </div>
               <p className="mt-2 text-sm font-semibold text-cocoa/70 dark:text-crema/70">{quebrada.nombre} · {quebrada.distrito}</p>
-              {riesgo && <p className="mt-1 text-sm font-semibold text-cocoa/70 dark:text-crema/70">{t("semaforo.lluvia", { a: riesgo.lluvia24h?.toFixed(1) ?? "0", b: riesgo.lluvia48h?.toFixed(1) ?? "0" })}{!riesgo.openMeteoOk && ` ${t("semaforo.sinConexion")}`}</p>}
+              {riesgo && <p className="mt-1 text-sm font-semibold text-cocoa/70 dark:text-crema/70">{t("semaforo.lluvia", { a: riesgo.lluvia24h?.toFixed(1) ?? "—", b: riesgo.lluvia48h?.toFixed(1) ?? "—" })}{!riesgo.openMeteoOk && ` ${t("semaforo.sinConexion")}`}</p>}
               {riesgo && <p className="mt-1 text-sm font-medium">{riesgo.explicacion}</p>}
+              {(semaforo === "insuficiente" || semaforo === "desconocido") && (
+                <p className="mt-2 rounded-xl bg-[#7c8a96]/15 p-2.5 text-sm font-extrabold text-cocoa dark:text-crema">
+                  ⚠ {t("datos.insuficiente")}
+                </p>
+              )}
               <p className="mt-2 text-sm font-extrabold">👉 {t(`accion.${semaforo}` as Clave)}</p>
               {riesgo?.nota && <p className="mt-1 text-xs font-semibold text-cocoa/55 dark:text-crema/55">{riesgo.nota}</p>}
               <div className="mt-3">
                 <BotonEscuchar
-                  texto={`${quebrada.nombre}. ${t(`semaforo.${semaforo}` as Clave)}: ${riesgo?.score ?? ""}/100. ${riesgo?.explicacion ?? ""} ${t(`accion.${semaforo}` as Clave)}`}
+                  texto={`${quebrada.nombre}. ${t(`semaforo.${semaforo}` as Clave)}: ${riesgo?.score ?? "—"}. ${riesgo?.explicacion ?? ""} ${t(`accion.${semaforo}` as Clave)}`}
                 />
               </div>
             </div>
@@ -348,6 +354,25 @@ export default function Home() {
         <p className="mt-2 max-w-2xl font-medium text-cocoa/70 dark:text-crema/70">{t("reportesMapa.sub")}</p>
         <div className="mt-5">
           <MapaPanel reportes={reportes} />
+        </div>
+      </motion.section>
+
+      {/* Avisos oficiales de SENAMHI: aparte de nuestra estimación */}
+      <motion.section {...aparece}>
+        <div className="rounded-3xl border-2 border-dashed border-cocoa/50 bg-white/60 p-5 dark:border-crema/40 dark:bg-carboncito/60">
+          <p className="flex flex-wrap items-center gap-2 font-display text-2xl leading-tight">
+            {t("avisos.titulo")}
+            <span className="rounded-full bg-cocoa px-2 py-0.5 text-xs font-black text-white dark:bg-crema dark:text-cocoa">OFICIAL · SENAMHI</span>
+          </p>
+          <p className="mt-1 max-w-2xl text-sm font-semibold text-cocoa/70 dark:text-crema/75">{t("avisos.texto")}</p>
+          <a
+            href="https://www.senamhi.gob.pe/?p=avisos-meteorologicos"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-block rounded-2xl border-2 border-cocoa bg-white px-4 py-2 font-display text-cocoa shadow-pop-sm transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none dark:border-crema/60 dark:bg-noche dark:text-crema"
+          >
+            {t("avisos.boton")}
+          </a>
         </div>
       </motion.section>
 
@@ -503,6 +528,8 @@ export default function Home() {
             )}
             {analisis && (
               <div className="space-y-1 text-sm">
+                <p className="font-display text-base">Tarjeta de Muse · evidencia e incertidumbre</p>
+                <p><strong>Qué vio Muse:</strong></p>
                 <p className="font-display text-lg">
                   {analisis.tipo} · {t("foto.nivel")} {analisis.gravedad === "grave" ? "🔴" : analisis.gravedad === "moderada" ? "🟡" : "🟢"} {analisis.gravedad}
                 </p>
@@ -523,7 +550,16 @@ export default function Home() {
                     </div>
                   </div>
                 )}
-                <p className="pt-1 font-extrabold">{t("reporte.queHacer")}</p>
+                <p className="pt-1">
+                  <strong>Qué no pudo verificar:</strong> el caudal en vivo, si hay
+                  personas atrapadas, daños dentro de las viviendas ni la hora exacta
+                  de la foto; puede no mostrar toda la quebrada.
+                </p>
+                <p>
+                  <strong>Decisión:</strong> pendiente de un coordinador humano.
+                  Esta tarjeta no envía ayuda ni asigna cuadrillas.
+                </p>
+                <p className="pt-1 font-extrabold">Qué hacer:</p>
                 <ol className="list-decimal space-y-1 pl-5 font-medium">
                   {analisis.acciones.map((a, i) => (
                     <li key={i}>{a}</li>

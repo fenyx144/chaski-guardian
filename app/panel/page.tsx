@@ -5,9 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { Reporte, Mision, Propuesta } from "@/lib/store";
 import type { EstadoSimulacion } from "@/lib/simulacion-estado";
+import { CASOS_FICTICIOS } from "@/lib/evaluacion";
+import { calcularRiesgo, SEMAFORO_META } from "@/lib/risk";
 import type { Cuadrilla } from "@/lib/cuadrillas";
 import type { Voluntario } from "@/lib/voluntarios";
-import { SEMAFORO_META } from "@/lib/risk";
 import Boton from "@/components/Boton";
 import BotonEscuchar from "@/components/BotonEscuchar";
 
@@ -262,6 +263,36 @@ export default function PanelPage() {
         ))}
       </section>
 
+      {/* Mini evaluación con casos ficticios etiquetados */}
+      <section>
+        <h2 className="font-display text-2xl">
+          Mini evaluación{" "}
+          <span className="rounded-full bg-sol px-2 py-0.5 text-xs font-black text-cocoa">casos ficticios · datos de ejemplo</span>
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm font-semibold text-cocoa/65 dark:text-crema/70">
+          Cinco casos inventados para comprobar el semáforo sin esperar una
+          emergencia. Si falta lluvia, caudal o distancia, el resultado correcto
+          es “información insuficiente”, nunca verde.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {CASOS_FICTICIOS.map((c) => {
+            const r = calcularRiesgo(c.entrada);
+            const ok = r.semaforo === c.esperado;
+            return (
+              <article key={c.nombre} className="rounded-2xl border-2 border-cocoa/25 bg-white p-3 dark:border-crema/25 dark:bg-carboncito">
+                <p className="font-extrabold">{c.nombre}</p>
+                <p className="mt-1 text-xs font-semibold text-cocoa/60 dark:text-crema/65">{c.descripcion}</p>
+                <p className="mt-2 text-sm font-bold">
+                  <span style={{ color: SEMAFORO_META[r.semaforo].color }}>●</span>{" "}
+                  {ok ? "✓" : "✗"} esperado {c.esperado} · obtenido {r.semaforo}
+                </p>
+                <p className="text-xs font-bold text-cocoa/50 dark:text-crema/55">CASO FICTICIO</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <MapaPanel reportes={reportes} />
 
       {/* Cuadrillas de ejemplo y voluntarios inscritos */}
@@ -370,7 +401,7 @@ export default function PanelPage() {
                     style={{ backgroundColor: SEMAFORO_META[r.semaforo].color }}
                   />
                   <p className="font-extrabold">
-                    {r.tipo} · {r.score}/100
+                    {r.tipo} · {r.score != null ? `${r.score}/100` : "sin puntaje"}
                   </p>
                   <span className="ml-auto text-xs font-semibold text-cocoa/55 dark:text-crema/60">
                     {r.fuente} · {new Date(r.fecha).toLocaleString("es-PE")}

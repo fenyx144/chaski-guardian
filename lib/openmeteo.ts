@@ -33,13 +33,31 @@ export async function obtenerLluvia(
     if (t <= ahora) idx = i;
     else break;
   }
-  const val = (i: number) =>
-    i >= 0 && i < prec.length ? prec[i] ?? 0 : 0;
+  // Una hora sin dato NO vale 0: si faltan pocos, se escala la suma con
+  // las horas presentes; si falta mas del 25% de la ventana, se lanza
+  // error para que la ruta responda "desconocido", nunca un verde falso.
+  const ventana = (desde: number, hasta: number): number => {
+    const total = hasta - desde + 1;
+    let suma = 0;
+    let presentes = 0;
+    for (let i = desde; i <= hasta; i++) {
+      const v = i >= 0 && i < prec.length ? prec[i] : null;
+      if (typeof v === "number" && Number.isFinite(v)) {
+        suma += v;
+        presentes++;
+      }
+    }
+    const faltantes = total - presentes;
+    if (presentes === 0 || faltantes / total > 0.25) {
+      throw new Error(
+        `Open-Meteo con demasiados huecos de precipitacion (${faltantes}/${total} horas)`
+      );
+    }
+    return suma * (total / presentes);
+  };
 
-  let lluvia24h = 0;
-  for (let i = idx - 23; i <= idx; i++) lluvia24h += val(i);
-  let lluvia48h = 0;
-  for (let i = idx + 1; i <= idx + 48; i++) lluvia48h += val(i);
-
-  return { lluvia24h, lluvia48h };
+  return {
+    lluvia24h: ventana(idx - 23, idx),
+    lluvia48h: ventana(idx + 1, idx + 48),
+  };
 }

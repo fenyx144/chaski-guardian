@@ -12,7 +12,7 @@ export interface Reporte {
   tipo: string;
   descripcion: string;
   semaforo: Semaforo;
-  score: number;
+  score: number | null;
   fuente: "vecino" | "whatsapp" | "demo";
   foto?: string;
 }
@@ -83,18 +83,33 @@ const SEMILLA: StoreData = {
   misiones: [],
 };
 
+// En Vercel el disco es de solo lectura: la memoria del modulo manda.
+// El archivo es respaldo best-effort; si falla, jamas debe tumbar una ruta.
+let memoria: StoreData | null = null;
+
 async function leer(): Promise<StoreData> {
+  if (memoria) return memoria;
   try {
     const raw = await fs.readFile(STORE_PATH, "utf-8");
-    return JSON.parse(raw) as StoreData;
+    const parsed = JSON.parse(raw) as StoreData;
+    if (!parsed || !Array.isArray(parsed.reportes) || !Array.isArray(parsed.misiones)) {
+      throw new Error("store.json con forma inesperada");
+    }
+    memoria = parsed;
   } catch {
-    return structuredClone(SEMILLA);
+    memoria = structuredClone(SEMILLA);
   }
+  return memoria;
 }
 
 async function escribir(data: StoreData): Promise<void> {
-  await fs.mkdir(path.dirname(STORE_PATH), { recursive: true });
-  await fs.writeFile(STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
+  memoria = data;
+  try {
+    await fs.mkdir(path.dirname(STORE_PATH), { recursive: true });
+    await fs.writeFile(STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Disco de solo lectura (p. ej. Vercel): los datos quedan en memoria.
+  }
 }
 
 const uid = (pref: string) =>

@@ -14,7 +14,7 @@ async function redactarAlerta(q: Quebrada): Promise<string> {
     `⚠️ SIMULACIÓN · Chaski Guardian: está bajando mucha agua por ${q.nombre} (${q.distrito}). ` +
     `Qué hacer: no cruces el cauce ni la torrentera, aléjate del agua ahora. ` +
     `Ve a la zona alta más cercana, lejos del cauce, y avisa a tus vecinos. ` +
-    `En emergencia llama al 119. Esto es una simulación de práctica.`;
+    `Defensa Civil 115, Bomberos 116, Policía 105 (el 119 no es rescate: buzón de voz para tu familia). Esto es una simulación de práctica.`;
   const apiKey = process.env.MODEL_API_KEY;
   if (!apiKey) return respaldo;
   const baseUrl = (process.env.MODEL_BASE_URL || "https://api.meta.ai/v1").replace(/\/$/, "");
@@ -33,7 +33,7 @@ async function redactarAlerta(q: Quebrada): Promise<string> {
               "Escribes alertas CORTAS en español muy simple, pensadas para WhatsApp y para " +
               "personas asustadas. Nada de tecnicismos. Empieza siempre con: " +
               "'⚠️ SIMULACIÓN · Chaski Guardian:'. Incluye en 3 frases breves: qué está " +
-              "pasando, qué hacer ahora y a dónde ir. Cierra con: 'En emergencia llama al 119.'",
+              "pasando, qué hacer ahora y a dónde ir. Cierra con: 'Defensa Civil 115, Bomberos 116, Policía 105. El 119 no es una central de rescate: deja un mensaje de voz a tu familia si las líneas están saturadas.'",
           },
           {
             role: "user",

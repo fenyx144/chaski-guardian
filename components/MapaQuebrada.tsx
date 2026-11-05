@@ -27,6 +27,8 @@ const COLOR_SEMAFORO: Record<Semaforo, string> = {
   verde: "#2f9e44",
   amarillo: "#f5a623",
   rojo: "#e03131",
+  insuficiente: "#7c8a96",
+  desconocido: "#868e96",
 };
 
 interface WayGeom {
@@ -333,7 +335,9 @@ export default function MapaQuebrada({
               ["get", "semaforo"],
               "rojo", "#e03131",
               "amarillo", "#f5a623",
-              "#2f9e44",
+              "verde", "#2f9e44",
+              "insuficiente", "#7c8a96",
+              "#868e96",
             ],
           },
         });
@@ -343,7 +347,7 @@ export default function MapaQuebrada({
           const p = f.properties as { tipo?: string; descripcion?: string; score?: number };
           new maplibregl.Popup()
             .setLngLat(e.lngLat)
-            .setHTML(`<strong>${p.tipo ?? "reporte"}</strong> · ${p.score ?? 0}/100<br/>${(p.descripcion ?? "").slice(0, 140)}`)
+            .setHTML(`<strong>${p.tipo ?? "reporte"}</strong> · ${p.score ?? "—"}<br/>${(p.descripcion ?? "").slice(0, 140)}`)
             .addTo(map);
         });
         map.on("mouseenter", "reportes-puntos", () => (map.getCanvas().style.cursor = "pointer"));

@@ -9,7 +9,7 @@ import type { Semaforo } from "@/lib/risk";
 export type Animo = "feliz" | "preocupado" | "alerta" | "sorpresa";
 
 export function animoDe(semaforo: Semaforo): Exclude<Animo, "sorpresa"> {
-  return semaforo === "rojo" ? "alerta" : semaforo === "amarillo" ? "preocupado" : "feliz";
+  return semaforo === "rojo" ? "alerta" : semaforo === "verde" ? "feliz" : "preocupado";
 }
 
 const STICKER: Record<Animo, string> = {

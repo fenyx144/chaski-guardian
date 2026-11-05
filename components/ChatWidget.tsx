@@ -128,11 +128,11 @@ export default function ChatWidget() {
     setEscribiendo(true);
     try {
       const res = await fetch(`/api/risk?lat=${q.lat}&lon=${q.lon}&lang=${lang}`);
-      const r = (await res.json()) as { score: number; semaforo: Semaforo; explicacion: string };
+      const r = (await res.json()) as { score: number | null; semaforo: Semaforo; explicacion: string };
       decir({
         de: "chaski",
         texto:
-          `${q.nombre}\n${t(`semaforo.${r.semaforo}` as "semaforo.verde")} (${r.score}/100)\n${r.explicacion}` +
+          `${q.nombre}\n${t(`semaforo.${r.semaforo}` as "semaforo.verde")} ${r.score != null ? `(${r.score}/100)` : "(sin puntaje)"}\n${r.explicacion}` +
           `\n${lang === "en" ? "What to do" : "Qué hacer"}: ${t(`accion.${r.semaforo}` as "accion.verde")}`,
       });
       await fetch("/api/reportes", {
@@ -181,7 +181,7 @@ export default function ChatWidget() {
               `${data.tipo} · ${t("reporte.gravedad")} ${data.gravedad}\n${data.resumen}\n` +
               (data.medicion ? `🧱 Cauce tapado ~${data.medicion.tapadoPct}% (agua ${data.medicion.aguaPct}%, escombros ${data.medicion.escombrosPct}%) · SAM 3.1\n` : "") +
               `\n` +
-              `${t("reporte.queHacer")}\n1. ${data.acciones?.[0] ?? ""}\n2. ${data.acciones?.[1] ?? ""}\n3. ${data.acciones?.[2] ?? ""}`,
+              `${t("reporte.queHacer")}\n1. ${data.acciones?.[0] ?? ""}\n2. ${data.acciones?.[1] ?? ""}\n3. ${data.acciones?.[2] ?? ""}\n⚠️ ${lang === "en" ? "Muse could not verify live flow or trapped people. Decision pending a human coordinator." : "Muse no pudo verificar el caudal en vivo ni personas atrapadas. Decisión pendiente de un coordinador humano."}`,
           });
         }
       } catch {
@@ -215,7 +215,7 @@ export default function ChatWidget() {
       /* se usa la quebrada elegida */
     }
     try {
-      await fetch("/api/reportes", {
+      const resReporte = await fetch("/api/reportes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -229,22 +229,37 @@ export default function ChatWidget() {
               : "Alerta de emergencia enviada desde el chat. Necesita ayuda ahora.",
         }),
       });
+      if (!resReporte.ok) {
+        let detalle = `HTTP ${resReporte.status}`;
+        try {
+          const data = (await resReporte.json()) as { error?: string };
+          if (data.error) detalle = data.error;
+        } catch { /* se usa el estado HTTP */ }
+        decir({
+          de: "chaski",
+          texto:
+            lang === "en"
+              ? `⚠️ Your alert could not be registered: ${detalle}. If there is immediate danger, call 115, 116 or 105.`
+              : `⚠️ No se pudo registrar tu alerta: ${detalle}. Si hay peligro inmediato llama al 115, 116 o 105.`,
+        });
+        return;
+      }
       const res = await fetch(`/api/risk?lat=${lat}&lon=${lon}&lang=${lang}`);
       const r = (await res.json()) as { semaforo: Semaforo };
       decir({
         de: "chaski",
         texto:
           lang === "en"
-            ? `🚨 Alert sent to the coordinator. Help is on its way.\nYour color: ${r.semaforo}.\nNOW: go to high ground, away from the ravine. Do not cross water. If there is immediate danger, call 119.`
-            : `🚨 Alerta enviada al coordinador. La ayuda va en camino.\nTu color: ${r.semaforo}.\nAHORA: ve a zona alta, lejos de la quebrada. No cruces el agua. Si hay peligro inmediato, llama al 119.`,
+            ? `🚨 Your alert has been registered for the coordinator. This does not guarantee that help will arrive; if there is immediate danger, call 115, 116 or 105.\nYour color: ${r.semaforo}.\nNOW: go to high ground, away from the ravine. Do not cross water.`
+            : `🚨 Tu alerta quedó registrada para el coordinador. Esto no garantiza que llegue ayuda; si hay peligro inmediato llama al 115, 116 o 105.\nTu color: ${r.semaforo}.\nAHORA: ve a zona alta, lejos de la quebrada. No cruces el agua.`,
       });
     } catch {
       decir({
         de: "chaski",
         texto:
           lang === "en"
-            ? "The alert couldn't be sent. If there is danger, call 119 now."
-            : "No se pudo enviar la alerta. Si hay peligro, llama al 119 ahora.",
+            ? "The alert couldn't be sent. If there is danger, call 115 Civil Defense, 116 Firefighters or 105 Police now."
+            : "No se pudo enviar la alerta. Si hay peligro, llama ahora al 115 Defensa Civil, 116 Bomberos o 105 Policía.",
       });
     } finally {
       setEnviandoAlerta(false);
@@ -428,6 +443,11 @@ export default function ChatWidget() {
                 ? "🚨 ALERT — I NEED HELP"
                 : "🚨 ALERTA — NECESITO AYUDA"}
             </button>
+            <p className="mx-3 mt-1.5 text-center text-[11px] font-bold leading-snug text-cocoa/60 dark:text-crema/65">
+              {lang === "en"
+                ? "This button does not guarantee that an authority has received your request. It only alerts the Chaski Guardian coordinator. Emergencies: 115 · 116 · 105."
+                : "Este botón no garantiza que una autoridad haya recibido tu solicitud. Solo avisa al coordinador de Chaski Guardian. Emergencias: 115 · 116 · 105."}
+            </p>
 
             {/* Entrada */}
             <div className="space-y-2 border-t-2 border-cocoa/10 bg-[#f0f2f5] p-2.5 dark:border-white/10 dark:bg-[#1f2c34]">

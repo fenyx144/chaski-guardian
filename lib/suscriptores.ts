@@ -34,12 +34,26 @@ export function enmascarar(telefono: string): string {
   return `+51 9•• ••• ${telefono.slice(-3)}`;
 }
 
+let memoria: Suscriptor[] | null = null;
+
 export async function listarSuscriptores(): Promise<Suscriptor[]> {
+  if (memoria) return memoria;
   try {
     const data = JSON.parse(await fs.readFile(RUTA, "utf-8")) as Suscriptor[];
-    return Array.isArray(data) ? data : [];
+    memoria = Array.isArray(data) ? data : [];
   } catch {
-    return [];
+    memoria = [];
+  }
+  return memoria;
+}
+
+async function persistir(lista: Suscriptor[]): Promise<void> {
+  memoria = lista;
+  try {
+    await fs.mkdir(path.dirname(RUTA), { recursive: true });
+    await fs.writeFile(RUTA, JSON.stringify(lista, null, 2), "utf-8");
+  } catch {
+    // Disco de solo lectura (p. ej. Vercel): queda en memoria.
   }
 }
 
@@ -54,8 +68,6 @@ export async function guardarSuscriptor(
     id: `sus-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     fecha: new Date().toISOString(),
   };
-  lista.unshift(suscriptor);
-  await fs.mkdir(path.dirname(RUTA), { recursive: true });
-  await fs.writeFile(RUTA, JSON.stringify(lista, null, 2), "utf-8");
+  await persistir([suscriptor, ...lista]);
   return { suscriptor, nuevo: true };
 }

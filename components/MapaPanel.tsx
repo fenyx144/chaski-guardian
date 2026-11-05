@@ -121,7 +121,7 @@ export default function MapaPanel({ reportes }: { reportes: Reporte[] }) {
             <button
               key={r.id}
               onClick={() => setElegido(r)}
-              aria-label={`Reporte ${r.tipo}, ${r.score} de 100`}
+              aria-label={`Reporte ${r.tipo}, ${r.score ?? "—"} de 100`}
               className="absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md transition-transform hover:scale-125"
               style={{ left, top, backgroundColor: SEMAFORO_META[r.semaforo].color }}
             />
@@ -132,7 +132,7 @@ export default function MapaPanel({ reportes }: { reportes: Reporte[] }) {
         {elegido && (
           <div className="absolute left-3 top-3 max-w-[75%] rounded-xl bg-black/70 px-3 py-2 text-xs font-bold leading-relaxed text-white">
             <p>
-              {elegido.tipo} · {elegido.score}/100 · {new Date(elegido.fecha).toLocaleString("es-PE")}
+              {elegido.tipo} · {elegido.score ?? "—"} · {new Date(elegido.fecha).toLocaleString("es-PE")}
             </p>
             <p className="font-medium">{elegido.descripcion || "(sin descripción)"}</p>
             <button onClick={() => setElegido(null)} className="mt-1 rounded bg-white/20 px-2 py-0.5">
