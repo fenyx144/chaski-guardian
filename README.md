@@ -1,4 +1,4 @@
-﻿# Chaski Guardian
+# Chaski Guardian
 
 [![Track](https://img.shields.io/badge/Track-Indie%20developer-0A66C2)](https://cerebralvalley.ai/e/meta-ai-developer-hackathon)
 [![Theme](https://img.shields.io/badge/Theme-Build%20for%20Your%20World-7C3AED)](https://cerebralvalley.ai/e/meta-ai-developer-hackathon)
@@ -11,7 +11,7 @@
 
 **Track:** Indie developer · **Theme:** Build for Your World  
 **Live demo:** https://chaski-guardian.vercel.app/  
-**Demo video:** `VIDEO_URL_AQUI` ← replace with your YouTube (unlisted) link  
+**Demo video:** https://youtu.be/qn2WQ80TCKE (narrated in Spanish; English subtitles could not be configured in time - enable YouTube auto-translate captions > English)  
 **Repo:** https://github.com/fenyx144/chaski-guardian
 
 ---
