@@ -177,6 +177,7 @@ export default function MapaNino({
                 )
               );
             marcadoresClima.current.push(mk);
+            mk.addTo(map);
           }
         }
       } catch {

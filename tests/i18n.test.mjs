@@ -16,10 +16,12 @@ function claves(bloque) {
   return [...bloque.matchAll(/"([\w.]+)":/g)].map((m) => m[1]).sort();
 }
 
-test("los diccionarios es y en tienen exactamente las mismas claves", () => {
-  const [esBloque, enBloque] = i18n.split("const en: Record<Clave, string> =");
-  assert.ok(enBloque, "falta el diccionario en");
-  assert.deepEqual(claves(esBloque), claves(enBloque.split("};")[0]));
+test("los diccionarios es, en y qu tienen exactamente las mismas claves", () => {
+  const [esBloque, resto] = i18n.split("const en: Record<Clave, string> =");
+  const [enBloque, quBloque] = resto.split("const qu: Record<Clave, string> =");
+  assert.ok(quBloque, "falta el diccionario quechua");
+  assert.deepEqual(claves(esBloque), claves(enBloque));
+  assert.deepEqual(claves(esBloque), claves(quBloque.split("};")[0]));
 });
 
 test("la página principal usa el idioma elegido", () => {

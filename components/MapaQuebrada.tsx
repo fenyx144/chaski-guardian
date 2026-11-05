@@ -187,6 +187,9 @@ export default function MapaQuebrada({
     map.on("load", async () => {
       map.setTerrain({ source: "dem", exaggeration: 1.5 });
 
+      // La foto y el relieve ya se ven: no esperar a Overpass para mostrarlos.
+      setCargando(false);
+
       // Zona de cercanía (600 m): vivir dentro es estar expuesto al cauce.
       map.addSource("zona", { type: "geojson", data: circulo(lo, la, 600) });
       map.addLayer({

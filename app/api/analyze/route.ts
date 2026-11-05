@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { medirCauce, type MedicionCauce } from "@/lib/sam";
+
 // POST /api/analyze { image: "data:image/jpeg;base64,..." }
 // Analiza la foto con muse-spark-1.3 y devuelve tipo de daño, gravedad y acciones.
 
@@ -10,7 +12,11 @@ interface Analisis {
   gravedad: "leve" | "moderada" | "grave";
   acciones: [string, string, string];
   resumen: string;
+  /** Medición SAM 3.1: cuánto del cauce está tapado (null si no se ve cauce). */
+  medicion: MedicionCauce | null;
 }
+
+const ORDEN_GRAVEDAD = { leve: 0, moderada: 1, grave: 2 } as const;
 
 function extraerJson(texto: string): Partial<Analisis> | null {
   const m = texto.match(/\{[\s\S]*\}/);
@@ -112,7 +118,23 @@ export async function POST(req: Request) {
         j?.acciones?.[2] ?? "No cruces agua torrentosa ni a pie ni en vehículo.",
       ],
       resumen: j?.resumen ?? texto.slice(0, 300) ?? "Análisis recibido.",
+      medicion: null,
     };
+
+    // SAM 3.1 segmenta cauce, agua y escombros: la gravedad deja de ser solo
+    // una opinión y pasa a medirse (% del cauce tapado).
+    const medicion = await medirCauce(body.image);
+    if (medicion) {
+      analisis.medicion = medicion;
+      const porTapado =
+        medicion.tapadoPct >= 50 ? "grave" : medicion.tapadoPct >= 25 ? "moderada" : "leve";
+      if (ORDEN_GRAVEDAD[porTapado] > ORDEN_GRAVEDAD[analisis.gravedad]) {
+        analisis.gravedad = porTapado;
+      }
+      analisis.resumen =
+        `${analisis.resumen} Según SAM 3.1, el cauce está tapado en ~${medicion.tapadoPct}% ` +
+        `(agua ${medicion.aguaPct}%, escombros ${medicion.escombrosPct}%).`.trim();
+    }
     return NextResponse.json(analisis);
   } catch (e) {
     return NextResponse.json(

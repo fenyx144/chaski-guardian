@@ -8,6 +8,7 @@ out/
 .env*.local
 # data local (reportes y misiones de demo)
 data/store.json
+data/suscriptores.json
 # misc
 .DS_Store
 *.log

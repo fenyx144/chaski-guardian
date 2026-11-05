@@ -29,7 +29,7 @@ const clamp = (n: number, min: number, max: number) =>
  * - pronóstico 48h pesa menos,
  * - la pendiente suma un factor de velocidad del huaico.
  */
-export function calcularRiesgo(input: RiesgoInput, idioma: "es" | "en" = "es"): RiesgoResult {
+export function calcularRiesgo(input: RiesgoInput, idioma: "es" | "en" | "qu" = "es"): RiesgoResult {
   const lluvia24h = Math.max(0, input.lluvia24h || 0);
   const lluvia48h = Math.max(0, input.lluvia48h || 0);
   const pendiente = clamp(input.pendiente || 0, 0, 45);
@@ -55,6 +55,22 @@ export function calcularRiesgo(input: RiesgoInput, idioma: "es" | "en" = "es"): 
 
   const semaforo: Semaforo =
     score >= 65 ? "rojo" : score >= 35 ? "amarillo" : "verde";
+
+  if (idioma === "qu") {
+    const explicacionQu =
+      semaforo === "rojo"
+        ? `Hatun peligro (tantiyay): 24 pachapi ${lluvia24h.toFixed(1)} mm para, ` +
+          `${lluvia48h.toFixed(1)} mm suyasqa, ~${pendiente}° sayaywan. ` +
+          `Wayqu huntay icha huayco atinman: ama wayquta chimpaychu, ripunaykipaq wakichikuy.`
+        : semaforo === "amarillo"
+        ? `Chawpi peligro (tantiyay): 24 pachapi ${lluvia24h.toFixed(1)} mm para, ` +
+          `${lluvia48h.toFixed(1)} mm suyasqa, ~${pendiente}° sayaywan. ` +
+          `Wayquta qhaway, emergencia qipiykita wakichiy.`
+        : `Pisi peligro (tantiyay): 24 pachapi ${lluvia24h.toFixed(1)} mm para, ` +
+          `${lluvia48h.toFixed(1)} mm suyasqa, ~${pendiente}° sayaywan. ` +
+          `Kunanqa mana peligro rikchakunchu; paraptinqa qhaway.`;
+    return { score, semaforo, explicacion: explicacionQu };
+  }
 
   if (idioma === "en") {
     const explicacionEn =

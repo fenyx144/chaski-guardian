@@ -7,6 +7,8 @@ import MapaNino from "@/components/MapaNino";
 import MapaQuebrada from "@/components/MapaQuebrada";
 import MapaPanel from "@/components/MapaPanel";
 import VoluntarioBoton from "@/components/VoluntarioBoton";
+import SuscripcionWhatsApp from "@/components/SuscripcionWhatsApp";
+import BotonEscuchar from "@/components/BotonEscuchar";
 import type { Reporte } from "@/lib/store";
 import Boton from "@/components/Boton";
 import { Resaltado, Garabato, Nota } from "@/components/Amable";
@@ -31,6 +33,16 @@ interface AnalisisFoto {
   gravedad: string;
   acciones: string[];
   resumen: string;
+  medicion?: {
+    tapadoPct: number;
+    aguaPct: number;
+    escombrosPct: number;
+    cajas: {
+      cauce: { x: number; y: number; w: number; h: number }[];
+      agua: { x: number; y: number; w: number; h: number }[];
+      escombros: { x: number; y: number; w: number; h: number }[];
+    };
+  } | null;
 }
 
 const PASOS: { n: "1" | "2" | "3"; color: string }[] = [
@@ -285,6 +297,11 @@ export default function Home() {
               {riesgo && <p className="mt-1 text-sm font-medium">{riesgo.explicacion}</p>}
               <p className="mt-2 text-sm font-extrabold">👉 {t(`accion.${semaforo}` as Clave)}</p>
               {riesgo?.nota && <p className="mt-1 text-xs font-semibold text-cocoa/55 dark:text-crema/55">{riesgo.nota}</p>}
+              <div className="mt-3">
+                <BotonEscuchar
+                  texto={`${quebrada.nombre}. ${t(`semaforo.${semaforo}` as Clave)}: ${riesgo?.score ?? ""}/100. ${riesgo?.explicacion ?? ""} ${t(`accion.${semaforo}` as Clave)}`}
+                />
+              </div>
             </div>
             <p className="font-display text-lg leading-tight">{t("datos.titulo")}</p>
             <dl className="space-y-3 text-sm">
@@ -332,6 +349,11 @@ export default function Home() {
         <div className="mt-5">
           <MapaPanel reportes={reportes} />
         </div>
+      </motion.section>
+
+      {/* Alertas por WhatsApp */}
+      <motion.section {...aparece}>
+        <SuscripcionWhatsApp />
       </motion.section>
 
       {/* Consejos segun el semaforo y la torrentera */}
@@ -443,12 +465,32 @@ export default function Home() {
             </label>
             {foto && (
               <div className="space-y-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={foto}
-                  alt="Foto del reporte"
-                  className="max-h-48 rounded-2xl border-2 border-cocoa dark:border-crema/40"
-                />
+                <div className="relative inline-block max-w-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={foto}
+                    alt="Foto del reporte"
+                    className="max-h-48 rounded-2xl border-2 border-cocoa dark:border-crema/40"
+                  />
+                  {analisis?.medicion && (
+                    <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Segmentación SAM del cauce">
+                      {analisis.medicion.cajas.cauce.map((c, i) => (
+                        <rect key={`c${i}`} x={c.x * 100} y={c.y * 100} width={c.w * 100} height={c.h * 100} fill="none" stroke="#ffffff" strokeWidth={1.2} strokeDasharray={3} />
+                      ))}
+                      {analisis.medicion.cajas.agua.map((c, i) => (
+                        <rect key={`a${i}`} x={c.x * 100} y={c.y * 100} width={c.w * 100} height={c.h * 100} fill="#29b6f6" fillOpacity={0.35} stroke="#29b6f6" strokeWidth={1} />
+                      ))}
+                      {analisis.medicion.cajas.escombros.map((c, i) => (
+                        <rect key={`e${i}`} x={c.x * 100} y={c.y * 100} width={c.w * 100} height={c.h * 100} fill="#f59e0b" fillOpacity={0.4} stroke="#f59e0b" strokeWidth={1} />
+                      ))}
+                    </svg>
+                  )}
+                </div>
+                {analisis?.medicion && (
+                  <p className="text-xs font-bold text-cocoa/60 dark:text-crema/65">
+                    SAM 3.1: <span className="text-sky-600">■ agua</span> · <span className="text-amber-600">■ escombros</span> · cauce con línea blanca
+                  </p>
+                )}
                 <Boton variante="linea" onClick={analizarFoto} disabled={analizando} className="px-4 py-1.5 text-sm">
                   {analizando ? t("reporte.analizando") : t("reporte.analizar")}
                 </Boton>
@@ -465,6 +507,22 @@ export default function Home() {
                   {analisis.tipo} · {t("foto.nivel")} {analisis.gravedad === "grave" ? "🔴" : analisis.gravedad === "moderada" ? "🟡" : "🟢"} {analisis.gravedad}
                 </p>
                 <p className="font-medium text-cocoa/75 dark:text-crema/75">{analisis.resumen}</p>
+                {analisis.medicion && (
+                  <div className="pt-1">
+                    <p className="text-sm font-extrabold">
+                      Cauce tapado: ~{analisis.medicion.tapadoPct}%{" "}
+                      <span className="font-bold text-cocoa/55 dark:text-crema/60">
+                        (agua {analisis.medicion.aguaPct}% · escombros {analisis.medicion.escombrosPct}%) · medido por SAM 3.1
+                      </span>
+                    </p>
+                    <div className="mt-1 h-3 w-full overflow-hidden rounded-full border border-cocoa/40 bg-white dark:bg-noche">
+                      <div
+                        className={`h-full ${analisis.medicion.tapadoPct >= 50 ? "bg-red-500" : analisis.medicion.tapadoPct >= 25 ? "bg-amber-400" : "bg-green-500"}`}
+                        style={{ width: `${analisis.medicion.tapadoPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <p className="pt-1 font-extrabold">{t("reporte.queHacer")}</p>
                 <ol className="list-decimal space-y-1 pl-5 font-medium">
                   {analisis.acciones.map((a, i) => (

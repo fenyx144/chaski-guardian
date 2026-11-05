@@ -178,7 +178,9 @@ export default function ChatWidget() {
           decir({
             de: "chaski",
             texto:
-              `${data.tipo} · ${t("reporte.gravedad")} ${data.gravedad}\n${data.resumen}\n\n` +
+              `${data.tipo} · ${t("reporte.gravedad")} ${data.gravedad}\n${data.resumen}\n` +
+              (data.medicion ? `🧱 Cauce tapado ~${data.medicion.tapadoPct}% (agua ${data.medicion.aguaPct}%, escombros ${data.medicion.escombrosPct}%) · SAM 3.1\n` : "") +
+              `\n` +
               `${t("reporte.queHacer")}\n1. ${data.acciones?.[0] ?? ""}\n2. ${data.acciones?.[1] ?? ""}\n3. ${data.acciones?.[2] ?? ""}`,
           });
         }

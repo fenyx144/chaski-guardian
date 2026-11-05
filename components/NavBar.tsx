@@ -38,8 +38,8 @@ export default function NavBar() {
             ))}
           </nav>
           <button
-            onClick={() => setLang(lang === "es" ? "en" : "es")}
-            aria-label={lang === "es" ? "Switch to English" : "Cambiar a español"}
+            onClick={() => setLang(lang === "es" ? "en" : lang === "en" ? "qu" : "es")}
+            aria-label={lang === "es" ? "Switch to English" : lang === "en" ? "Quechuaman tikray" : "Cambiar a español"}
             className="rounded-lg border-2 border-cocoa/30 px-2 py-1 text-sm font-black hover:bg-sol/50 dark:border-crema/40 dark:hover:bg-white/10"
           >
             {t("nav.idioma")}

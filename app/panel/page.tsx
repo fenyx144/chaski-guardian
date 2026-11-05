@@ -4,10 +4,12 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { Reporte, Mision, Propuesta } from "@/lib/store";
+import type { EstadoSimulacion } from "@/lib/simulacion-estado";
 import type { Cuadrilla } from "@/lib/cuadrillas";
 import type { Voluntario } from "@/lib/voluntarios";
 import { SEMAFORO_META } from "@/lib/risk";
 import Boton from "@/components/Boton";
+import BotonEscuchar from "@/components/BotonEscuchar";
 
 const MapaPanel = dynamic(() => import("@/components/MapaPanel"), {
   ssr: false,
@@ -31,6 +33,8 @@ export default function PanelPage() {
   const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [propuestas, setPropuestas] = useState<Propuesta[]>([]);
+  const [simulacion, setSimulacion] = useState<EstadoSimulacion>({ activa: false, quebradasRojas: [], alertas: [], iniciada: null });
+  const [simulando, setSimulando] = useState(false);
   const [aviso, setAviso] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
 
@@ -46,6 +50,8 @@ export default function PanelPage() {
       setCuadrillas(r3.cuadrillas ?? []);
       setVoluntarios(r3.voluntarios ?? []);
       setPropuestas(r3.propuestas ?? []);
+      const r4 = await fetch("/api/simulacion").then((r) => r.json()).catch(() => null);
+      if (r4?.simulacion) setSimulacion(r4.simulacion);
     } catch {
       setAviso("Sin conexión con el servidor.");
     }
@@ -89,6 +95,44 @@ export default function PanelPage() {
       await recargar();
     } catch {
       setAviso("No se pudo pedir la propuesta.");
+    } finally {
+      setOcupado(null);
+    }
+  };
+
+  const alternarSimulacion = async () => {
+    setSimulando(true);
+    setAviso("");
+    try {
+      const res = await fetch("/api/simulacion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accion: simulacion.activa ? "detener" : "activar" }),
+      });
+      const data = await res.json();
+      if (data.simulacion) setSimulacion(data.simulacion);
+      setAviso(data.aviso ?? data.error ?? "");
+      await recargar();
+    } catch {
+      setAviso("No se pudo cambiar la simulación.");
+    } finally {
+      setSimulando(false);
+    }
+  };
+
+  const decidirAlerta = async (quebradaId: string, accion: "aprobar" | "rechazar") => {
+    setOcupado(quebradaId);
+    try {
+      const res = await fetch("/api/simulacion", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quebradaId, accion }),
+      });
+      const data = await res.json();
+      if (data.simulacion) setSimulacion(data.simulacion);
+      setAviso(data.aviso ?? data.error ?? "");
+    } catch {
+      setAviso("No se pudo registrar tu decisión sobre la alerta.");
     } finally {
       setOcupado(null);
     }
@@ -153,6 +197,70 @@ export default function PanelPage() {
           {aviso}
         </p>
       )}
+
+      {/* Simulación de crecida: práctica con alertas de WhatsApp */}
+      <section className="rounded-3xl border-2 border-dashed border-coral/70 bg-coral/5 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-2xl">
+              Simulación de crecida{" "}
+              {simulacion.activa && (
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-black text-white">SIMULACIÓN ACTIVA</span>
+              )}
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm font-semibold text-cocoa/65 dark:text-crema/70">
+              Práctica, no es una alerta real: pone las quebradas en rojo. La IA
+              propone, una persona aprueba: Muse redacta la alerta y recién cuando
+              la apruebas se envía por WhatsApp a los suscriptores.
+              Sin credenciales de WhatsApp, el envío queda marcado “simulado”.
+            </p>
+          </div>
+          <Boton
+            variante={simulacion.activa ? "linea" : "tinta"}
+            onClick={alternarSimulacion}
+            disabled={simulando}
+            className="px-4 py-2 text-sm"
+          >
+            {simulando ? "Trabajando…" : simulacion.activa ? "Detener simulación" : "🌊 Simular crecida"}
+          </Boton>
+        </div>
+        {simulacion.alertas.map((a) => (
+          <article key={a.quebradaId} className="mt-3 rounded-2xl border-2 border-cocoa/20 bg-white p-4 dark:border-crema/20 dark:bg-carboncito">
+            <p className="font-extrabold">
+              🔴 {a.nombre}{" "}
+              <span className="rounded-full bg-red-600/15 px-2 py-0.5 text-xs font-black text-red-700 dark:text-red-300">SIMULACIÓN</span>{" "}
+              <span className="text-sm font-bold text-cocoa/60 dark:text-crema/65">
+                {(a.estado ?? "pendiente") === "pendiente"
+                  ? "⏳ Pendiente de tu aprobación: aún no se envía nada"
+                  : a.estado === "rechazada"
+                  ? "❌ Rechazada: no se envió nada"
+                  : a.envio === "enviado"
+                  ? `✅ Enviada a ${a.vecinos} vecinos`
+                  : `✅ Aprobada · envío simulado a ${a.vecinos} vecinos`}
+              </span>
+            </p>
+            <p className="mt-2 whitespace-pre-wrap text-sm font-medium">{a.texto}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <BotonEscuchar texto={a.texto} />
+              {(a.estado ?? "pendiente") === "pendiente" && (
+                <>
+                  <Boton variante="hoja" onClick={() => decidirAlerta(a.quebradaId, "aprobar")} disabled={ocupado === a.quebradaId} className="px-4 py-1.5 text-sm">
+                    Aprobar y enviar
+                  </Boton>
+                  <Boton variante="linea" onClick={() => decidirAlerta(a.quebradaId, "rechazar")} disabled={ocupado === a.quebradaId} className="px-4 py-1.5 text-sm">
+                    Rechazar
+                  </Boton>
+                </>
+              )}
+            </div>
+            {a.numeros.length > 0 && (
+              <p className="mt-2 text-xs font-bold text-cocoa/55 dark:text-crema/60">
+                Números: {a.numeros.join(" · ")}
+              </p>
+            )}
+          </article>
+        ))}
+      </section>
 
       <MapaPanel reportes={reportes} />
 

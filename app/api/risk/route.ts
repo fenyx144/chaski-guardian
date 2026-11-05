@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { calcularRiesgo } from "@/lib/risk";
 import { quebradaMasCercana } from "@/lib/quebradas";
+import { obtenerSimulacion } from "@/lib/store";
 import { obtenerLluvia } from "@/lib/openmeteo";
 
 function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
   const lat = Number(searchParams.get("lat"));
   const lon = Number(searchParams.get("lon"));
   const demo = searchParams.get("demo");
-  const idioma = searchParams.get("lang") === "en" ? "en" : "es";
+  const idioma = searchParams.get("lang") === "en" ? "en" : searchParams.get("lang") === "qu" ? "qu" : "es";
 
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
     return NextResponse.json(
@@ -77,6 +78,30 @@ export async function GET(req: Request) {
       openMeteoOk: false,
       demo: true,
       nota: "ESTIMACIÓN ilustrativa, no una predicción oficial.",
+    });
+  }
+
+  // SIMULACIÓN de crecida activa desde el panel: esta quebrada se ve en rojo.
+  const sim = await obtenerSimulacion();
+  if (sim.activa && sim.quebradasRojas.includes(q.id)) {
+    return NextResponse.json({
+      score: 92,
+      semaforo: "rojo" as const,
+      explicacion:
+        idioma === "en"
+          ? `SIMULATION (not real): flood drill for ${q.nombre}. The coordinator activated the red alert from the panel.`
+          : `SIMULACIÓN (no es real): práctica de crecida en ${q.nombre}. El coordinador activó la alerta roja desde el panel.`,
+      quebrada: q,
+      lluvia24h: 30,
+      lluvia48h: 40,
+      distanciaKm: distKm,
+      caudal: { hoy: null, max7: null } as Caudal,
+      openMeteoOk: false,
+      simulacion: true,
+      nota:
+        idioma === "en"
+          ? "SIMULATION, not an official alert."
+          : "SIMULACIÓN, no es una alerta oficial.",
     });
   }
 

@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import type { Semaforo } from "./risk";
+import { SIMULACION_VACIA, type EstadoSimulacion } from "./simulacion-estado";
 
 export interface Reporte {
   id: string;
@@ -47,6 +48,7 @@ interface StoreData {
   reportes: Reporte[];
   misiones: Mision[];
   propuestas?: Propuesta[];
+  simulacion?: EstadoSimulacion;
 }
 
 const STORE_PATH = path.join(process.cwd(), "data", "store.json");
@@ -154,6 +156,16 @@ export async function cambiarEstadoPropuesta(
   p.estado = estado;
   await escribir(data);
   return p;
+}
+
+export async function obtenerSimulacion(): Promise<EstadoSimulacion> {
+  return (await leer()).simulacion ?? SIMULACION_VACIA;
+}
+
+export async function fijarSimulacion(e: EstadoSimulacion): Promise<void> {
+  const data = await leer();
+  data.simulacion = e;
+  await escribir(data);
 }
 
 export async function cambiarEstadoMision(
