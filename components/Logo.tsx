@@ -6,7 +6,7 @@ export default function Logo({ size = 34 }: { size?: number }) {
         height={size}
         viewBox="0 0 48 48"
         role="img"
-        aria-label="Logo Yaku Guardian"
+        aria-label="Logo Chaski Guardian"
       >
         <circle cx="24" cy="24" r="22" fill="#141210" stroke="#c77d2a" strokeWidth="2.5" />
         {/* gota de agua andina */}
@@ -28,7 +28,7 @@ export default function Logo({ size = 34 }: { size?: number }) {
         />
       </svg>
       <span className="font-display text-xl font-bold tracking-tight">
-        Yaku <span className="text-clay dark:text-sol">Guardian</span>
+        Chaski <span className="text-clay dark:text-sol">Guardian</span>
       </span>
     </span>
   );

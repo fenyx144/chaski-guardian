@@ -1,4 +1,4 @@
-# Yaku Guardian 🌊
+# Chaski Guardian 🌊
 
 Community-based **early warning system for El Niño rains** in the ravine
 (*quebrada*) neighborhoods of **Arequipa, Peru**. ([Versión en español](README.md))
@@ -19,7 +19,7 @@ Community-based **early warning system for El Niño rains** in the ravine
 
 | Route | Description |
 |---|---|
-| `/` | Traffic light per ravine, animated 2D scene, report form, and a **"Simulate heavy rain"** button (forces red for the demo video). |
+| `/` | Traffic light per ravine, live El Niño monitoring, animated 2D scene, and report form. |
 | `/panel` | Coordinator panel: MapLibre map with reports and forbidden zones, report list, missions with Approve/Reject. |
 | `/simulacion` | 3D terrain (three.js) with water particles by risk level. Illustrative simulation. |
 | `/chat` | Plan B: WhatsApp-like chat (bubbles, photo, location) using the same webhook logic. |

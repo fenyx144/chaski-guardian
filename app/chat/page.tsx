@@ -21,7 +21,7 @@ let siguienteId = 1;
 const mk = (m: Omit<Mensaje, "id">): Mensaje => ({ ...m, id: siguienteId++ });
 
 const BIENVENIDA =
-  "¡Hola! Soy Yaku Guardian 🌊. Envíame tu ubicación 📍 para darte el semáforo de tu zona, " +
+  "¡Hola! Soy Chaski Guardian 🌊. Envíame tu ubicación 📍 para darte el semáforo de tu zona, " +
   "una foto 📷 del daño para analizarla, o escríbeme AYUDA.";
 
 export default function ChatPage() {
@@ -138,7 +138,7 @@ export default function ChatPage() {
       <div>
         <h1 className="font-display text-4xl md:text-5xl">Chat demo</h1>
         <p className="mt-2 font-medium text-cocoa/70 dark:text-crema/70">
-          Como hablar con Yaku Guardian por WhatsApp, pero sin configurar nada.
+          Como hablar con Chaski Guardian por WhatsApp, pero sin configurar nada.
         </p>
       </div>
 
@@ -147,7 +147,7 @@ export default function ChatPage() {
         <div className="flex items-center gap-3 bg-sol/60 px-4 py-2 dark:bg-carboncito">
           <Mascota animo="feliz" saludo size={52} />
           <div>
-            <p className="font-display text-lg leading-tight">Yaku Guardian</p>
+            <p className="font-display text-lg leading-tight">Chaski Guardian</p>
             <p className="text-xs font-bold text-hoja">
               {escribiendo ? "escribiendo…" : "en línea"}
             </p>

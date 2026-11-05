@@ -56,20 +56,20 @@ async function textoRiesgo(lat: number, lon: number): Promise<string> {
     const r = calcularRiesgo({ lluvia24h, lluvia48h, pendiente: q.pendienteEstimada });
     const meta = SEMAFORO_META[r.semaforo];
     return (
-      `🟢🟡🔴 Yaku Guardian · ${q.nombre}\n` +
+      `🟢🟡🔴 Chaski Guardian · ${q.nombre}\n` +
       `Semáforo: ${meta.titulo} (${r.score}/100)\n${r.explicacion}\n` +
       `Qué hacer: ${meta.accion}\n(Estimación ilustrativa.)`
     );
   } catch {
     return (
-      `Yaku Guardian · ${q.nombre}: no pude consultar la lluvia ahora mismo. ` +
+      `Chaski Guardian · ${q.nombre}: no pude consultar la lluvia ahora mismo. ` +
       `Si ves el cauce crecido, aléjate a zona alta y avisa al 119.`
     );
   }
 }
 
 const AYUDA =
-  "Soy Yaku Guardian 🌊. Envíame:\n" +
+  "Soy Chaski Guardian 🌊. Envíame:\n" +
   "· tu UBICACIÓN para darte el semáforo de tu zona,\n" +
   "· una FOTO del daño para analizarla,\n" +
   "· o escribe AYUDA para ver este mensaje.";
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
       } else if (m.type === "image") {
         await enviarWhatsApp(
           from,
-          "Recibí tu foto 📷. Para analizarla necesito que la subas también en la web de Yaku Guardian " +
+          "Recibí tu foto 📷. Para analizarla necesito que la subas también en la web de Chaski Guardian " +
             "(o escríbeme qué se ve: desborde, deslizamiento, vía cortada o vivienda afectada). " +
             "Si hay peligro inmediato, llama al 119."
         );

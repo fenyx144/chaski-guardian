@@ -186,7 +186,7 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.16 }}
             className="mt-4 max-w-md text-lg font-medium text-cocoa/75 dark:text-crema/80"
           >
-            Yaku Guardian avisa a los vecinos de quebrada cuando la lluvia trae
+            Chaski Guardian avisa a los vecinos de quebrada cuando la lluvia trae
             peligro. Reporta, mira el semáforo y actúa a tiempo.
           </motion.p>
           <motion.div
@@ -209,7 +209,7 @@ export default function Home() {
             className="mt-3 flex items-center gap-3"
           >
             <Mascota animo="feliz" saludo size={84} />
-            <Nota>¡hola, soy Yaku!</Nota>
+            <Nota>¡hola, soy Chaski!</Nota>
           </motion.div>
         </div>
 

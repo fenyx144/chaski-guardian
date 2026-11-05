@@ -70,7 +70,7 @@ body {
   }
 }
 
-/* Marioneta Yaku: la cabeza cabecea */
+/* Marioneta Chaski: la cabeza cabecea */
 .yaku-cabeza {
   transform-origin: 50% 92%;
   animation: yaku-cabeza 3s ease-in-out infinite;
@@ -86,7 +86,7 @@ body {
   }
 }
 
-/* Marioneta Yaku: saludo enérgico */
+/* Marioneta Chaski: saludo enérgico */
 .yaku-cabeza-saludo {
   transform-origin: 50% 92%;
   animation: yaku-cabeza-saludo 1.2s ease-in-out infinite;
@@ -102,7 +102,7 @@ body {
   }
 }
 
-/* Marioneta Yaku: susto (alerta) */
+/* Marioneta Chaski: susto (alerta) */
 .yaku-cabeza-susto {
   transform-origin: 50% 92%;
   animation: yaku-cabeza-susto 1.4s ease-in-out infinite;
@@ -125,7 +125,7 @@ body {
   }
 }
 
-/* Marioneta Yaku: duda (preocupado) */
+/* Marioneta Chaski: duda (preocupado) */
 .yaku-cabeza-duda {
   transform-origin: 50% 92%;
   animation: yaku-cabeza-duda 3.4s ease-in-out infinite;
@@ -141,7 +141,7 @@ body {
   }
 }
 
-/* Marioneta Yaku: el cuerpo respira */
+/* Marioneta Chaski: el cuerpo respira */
 .yaku-cuerpo {
   transform-origin: 50% 100%;
   animation: yaku-cuerpo 3s ease-in-out infinite;

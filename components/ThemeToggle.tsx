@@ -15,7 +15,7 @@ export default function ThemeToggle() {
     setOscuro(next);
     document.documentElement.classList.toggle("dark", next);
     try {
-      localStorage.setItem("yaku-tema", next ? "oscuro" : "claro");
+      localStorage.setItem("chaski-tema", next ? "oscuro" : "claro");
     } catch {
       /* modo privado: se queda en memoria */
     }

@@ -3,9 +3,9 @@
 import { motion } from "framer-motion";
 import type { Semaforo } from "@/lib/risk";
 
-// Yaku, el cuy guardián: marioneta de 2 capas (cabeza + cuerpo) recortadas de la
-// imagen oficial. Cada capa se mueve por separado: la cabeza cabecea, el cuerpo
-// respira y todo reacciona al toque. El fondo blanco une las capas sin costuras.
+// Chaski, el cuy mensajero: marioneta de 2 capas (cabeza + cuerpo) recortadas de
+// la imagen oficial. Cada capa se mueve por separado: la cabeza cabecea, el
+// cuerpo respira y todo reacciona al toque. El fondo blanco une las capas.
 
 export type Animo = "feliz" | "preocupado" | "alerta" | "sorpresa";
 
@@ -35,7 +35,7 @@ export default function Mascota({
   return (
     <span
       role="img"
-      aria-label={`Yaku, el cuy guardián, ${animo}${saludo ? ", saludando" : ""}`}
+      aria-label={`Chaski, el cuy mensajero, ${animo}${saludo ? ", saludando" : ""}`}
       className="inline-block overflow-hidden rounded-[26%] border-[3px] border-cocoa bg-white leading-none dark:border-crema/70"
       style={{ width: size, aspectRatio: "735 / 509" }}
     >
@@ -44,7 +44,7 @@ export default function Mascota({
         whileHover={{ scale: 1.05, rotate: -1 }}
         whileTap={{ scale: 0.88, rotate: 2 }}
         transition={{ type: "spring", stiffness: 400, damping: 12 }}
-        title="¡Toca a Yaku!"
+        title="¡Toca a Chaski!"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

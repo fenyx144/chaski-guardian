@@ -17,7 +17,7 @@ export default function NavBar() {
   return (
     <header className="sticky top-0 z-40 border-b-2 border-cocoa/10 bg-crema/95 backdrop-blur dark:border-white/10 dark:bg-noche/95">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-        <Link href="/" aria-label="Yaku Guardian inicio">
+        <Link href="/" aria-label="Chaski Guardian inicio">
           <Logo />
         </Link>
         <div className="flex items-center gap-2">

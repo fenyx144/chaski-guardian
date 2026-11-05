@@ -68,7 +68,7 @@ export async function POST(req: Request) {
           {
             role: "system",
             content:
-              "Eres Yaku Guardian, asistente de emergencias por lluvias en Arequipa, Perú. " +
+              "Eres Chaski Guardian, asistente de emergencias por lluvias en Arequipa, Perú. " +
               "Responde SIEMPRE en español con un JSON: " +
               '{"tipo": "desborde|deslizamiento|vía cortada|vivienda afectada|otro", ' +
               '"gravedad": "leve|moderada|grave", ' +

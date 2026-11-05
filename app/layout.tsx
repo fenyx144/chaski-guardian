@@ -23,12 +23,12 @@ const mano = Schoolbell({
 });
 
 export const metadata: Metadata = {
-  title: "Yaku Guardian · Alerta temprana ante lluvias en Arequipa",
+  title: "Chaski Guardian · Alerta temprana ante lluvias en Arequipa",
   description:
     "Sistema comunitario de alerta temprana ante lluvias de El Niño para barrios de quebrada en Arequipa, Perú.",
 };
 
-const TEMA_INICIAL = `(function(){try{if(localStorage.getItem('yaku-tema')==='oscuro'){document.documentElement.classList.add('dark')}}catch(e){}})()`;
+const TEMA_INICIAL = `(function(){try{if(localStorage.getItem('chaski-tema')==='oscuro'){document.documentElement.classList.add('dark')}}catch(e){}})()`;
 
 export default function RootLayout({
   children,
@@ -45,7 +45,7 @@ export default function RootLayout({
           <NavBar />
           <main className="mx-auto w-full max-w-6xl px-4 pb-16">{children}</main>
           <footer className="border-t-2 border-cocoa/10 py-6 text-center text-sm font-semibold text-cocoa/60 dark:border-white/10 dark:text-crema/60">
-            Yaku Guardian · MIT · Estimación ilustrativa, no reemplaza alertas
+            Chaski Guardian · MIT · Estimación ilustrativa, no reemplaza alertas
             oficiales (INDECI / SENAMHI).
           </footer>
         </Proveedores>

@@ -1,4 +1,4 @@
-# Yaku Guardian 🌊
+# Chaski Guardian 🌊
 
 Sistema comunitario de **alerta temprana ante lluvias de El Niño** para barrios
 de quebrada en **Arequipa, Perú**. ([English version](README.en.md))
@@ -21,7 +21,7 @@ de quebrada en **Arequipa, Perú**. ([English version](README.en.md))
 
 | Ruta | Descripción |
 |---|---|
-| `/` | Semáforo por quebrada, escena 2D animada, formulario de reporte y botón **“Simular lluvia fuerte”** (fuerza el rojo para el video demo). |
+| `/` | Semáforo por quebrada, monitoreo de El Niño en vivo, escena 2D animada y formulario de reporte. |
 | `/panel` | Panel del coordinador: mapa MapLibre con reportes y zonas prohibidas, lista de reportes y misiones con Aprobar/Rechazar. |
 | `/simulacion` | Terreno 3D (three.js) con partículas de agua según el riesgo. Simulación ilustrativa. |
 | `/chat` | Plan B: chat que simula WhatsApp (burbujas, foto, ubicación) con la misma lógica del webhook. |
