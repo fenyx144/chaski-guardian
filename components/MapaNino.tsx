@@ -5,6 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Mascota from "@/components/Mascota";
 import { QUEBRADAS, quebradaMasCercana } from "@/lib/quebradas";
+import { useIdioma } from "@/lib/i18n";
 
 interface NinoData {
   oni: number;
@@ -65,16 +66,19 @@ function iconoDe(lluvia: number, nubes: number): string {
   return SVG_SOL;
 }
 
-function fraseEstado(d: NinoData): { titulo: string; detalle: string; animo: "feliz" | "preocupado" | "alerta" } {
+function fraseEstado(
+  d: NinoData,
+  t: (clave: import("@/lib/i18n").Clave) => string
+): { titulo: string; detalle: string; animo: "feliz" | "preocupado" | "alerta" } {
   if (d.fase === "El Niño") {
     return d.oni >= 1.5
-      ? { titulo: "El mar está muy caliente: El Niño está fuerte.", detalle: "Cuida mucho tu quebrada si llueve.", animo: "alerta" }
-      : { titulo: "El mar está caliente: hay El Niño.", detalle: "Atento a la lluvia y a tu quebrada.", animo: "alerta" };
+      ? { titulo: t("estado.ninoFuerte"), detalle: t("estado.detalleNino"), animo: "alerta" }
+      : { titulo: t("estado.nino"), detalle: t("estado.detalleLluvia"), animo: "alerta" };
   }
   if (d.fase === "La Niña") {
-    return { titulo: "El mar está frío: hay La Niña.", detalle: "Igual cuida tu quebrada si llueve.", animo: "preocupado" };
+    return { titulo: t("estado.nina"), detalle: t("estado.detalleIgual"), animo: "preocupado" };
   }
-  return { titulo: "El mar está normal: no hay El Niño.", detalle: "Igual mira tu semáforo si llueve.", animo: "feliz" };
+  return { titulo: t("estado.neutral"), detalle: t("estado.detalleSemaforo"), animo: "feliz" };
 }
 
 export default function MapaNino({
@@ -82,6 +86,9 @@ export default function MapaNino({
 }: {
   onElegirQuebrada?: (id: string) => void;
 }) {
+  const { t } = useIdioma();
+  const tRef = useRef(t);
+  tRef.current = t;
   const elegirRef = useRef(onElegirQuebrada);
   elegirRef.current = onElegirQuebrada;
   const contenedor = useRef<HTMLDivElement>(null);
@@ -199,10 +206,10 @@ export default function MapaNino({
         if (v === null || v === undefined) return;
         const texto =
           v >= 0.5
-            ? `Aquí el mar está ${v} grados más caliente que lo normal.`
+            ? tRef.current("mar.caliente", { v })
             : v <= -0.5
-            ? `Aquí el mar está ${Math.abs(v)} grados más frío que lo normal.`
-            : "Aquí el mar está normal.";
+            ? tRef.current("mar.frio", { v: Math.abs(v) })
+            : tRef.current("mar.normal");
         new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<strong>${texto}</strong>`).addTo(map);
       });
 
@@ -326,7 +333,7 @@ export default function MapaNino({
     map.flyTo({ center: AREQUIPA, zoom: 10.5, duration: 2000 });
   };
 
-  const estado = datos ? fraseEstado(datos) : null;
+  const estado = datos ? fraseEstado(datos, t) : null;
 
   const leyendaMar: [string, string][] = [
     ["Mucho más frío", "#08519c"],

@@ -1,149 +1,155 @@
-# Chaski Guardian
+﻿# Chaski Guardian
 
-**Community early warning for El Niño floods and landslides in Peru, starting with the ravine neighborhoods of Arequipa.**
+[![Track](https://img.shields.io/badge/Track-Indie%20developer-0A66C2)](https://cerebralvalley.ai/e/meta-ai-developer-hackathon)
+[![Theme](https://img.shields.io/badge/Theme-Build%20for%20Your%20World-7C3AED)](https://cerebralvalley.ai/e/meta-ai-developer-hackathon)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![Meta Model API](https://img.shields.io/badge/Meta-Model%20API-0668E1)](https://dev.meta.ai/docs)
 
-Before the rain, a family should know whether their ravine (*quebrada*) is at risk and what to do. Chaski Guardian turns live weather and ocean data, neighbor photos and reports into a simple traffic light (green, yellow, red) with clear actions, and helps a coordinator send help with **human judgment**: an AI proposes, a person approves.
+> **WhatsApp-first early warning for El Niño floods and landslides in Peru's ravine neighborhoods.**  
+> Report → Evaluate → Act — before the water rises.
 
-> Built for the **Meta Global AI Developer Hackathon** (Indie Developer track), Oct 26 - Nov 4, 2026, with Meta Muse Spark and Muse Code.
-> Spanish version: [README.es.md](README.es.md)
+**Track:** Indie developer · **Theme:** Build for Your World  
+**Live demo:** https://chaski-guardian.vercel.app/  
+**Demo video:** `VIDEO_URL_AQUI` ← replace with your YouTube (unlisted) link  
+**Repo:** https://github.com/fenyx144/chaski-guardian
 
-> **Important:** every risk value is an **illustrative estimate** for prioritizing attention. It is not a prediction and does not replace official alerts from INDECI or SENAMHI.
+---
+
+## The problem I know firsthand
+
+I live in **Arequipa, Peru**. Every El Niño season, rain fills dry quebradas (ravines) in minutes. Families living at the edge get late or unclear warnings. Neighbors report damage in WhatsApp groups that coordinators cannot triage. Official alerts exist, but they rarely say *"what should my street do right now?"*
+
+**Chaski Guardian** is built for that gap: a community channel that turns a photo, a voice note, or a location into a clear traffic light — and helps the right help arrive, with a human always in control.
 
 ---
 
-## Submission
+## Solution flow
 
-| | |
-|---|---|
-| Hackathon | Meta Global AI Developer Hackathon, Oct 26 - Nov 4, 2026 |
-| Track | Indie Developer |
-| Team | Diego Rivas Revilla ([@fenyx144](https://github.com/fenyx144)), Arequipa, Peru |
-| Demo video (3 min) | VIDEO_URL_AQUI |
-| Live demo | DEMO_URL_AQUI (or run locally, see below) |
-| Code | this repository, MIT license |
-| Meta models | `muse-spark-1.3` (image analysis, mission proposals), `muse-voice-transcribe-1.0` (transcription endpoint), Muse Code (development) |
-| New work | All code was written during the event window; the commit history starts on Nov 3, 2026. |
+| Step | What happens |
+|------|----------------|
+| **1. Reportar** | Neighbor sends a photo, voice note, location, or short text (WhatsApp-style chat / demo UI). |
+| **2. Evaluar** | Muse Spark analyzes the photo and combines it with rain + quebrada context into a **green / yellow / red** risk signal and plain-language actions. |
+| **3. Actuar** | Coordinator reviews reports, approves crew missions, and neighbors see what to do — plus emergency numbers. |
+
+A human **always** approves crew missions. **No-go / forbidden zones** are enforced in code so the system cannot dispatch people into blocked areas.
 
 ---
-## Why this matters
 
-During El Niño, heavy rain turns dry ravines into torrents (*huaicos*) within minutes. The families living in those ravines often get little or no warning, and coordinators lack a quick, shared picture of who needs help first. Chaski Guardian focuses on one flow:
+## Screenshots
 
-**Report -> Evaluate -> Act**
+| Home | Coordinator panel |
+|------|-------------------|
+| ![Home](docs/screenshots/01-home.png) | ![Panel](docs/screenshots/02-panel.png) |
 
-1. **Report.** A neighbor sends a photo, a location or a message, from the web app or from WhatsApp.
-2. **Evaluate.** The system combines real rainfall forecasts with the ravine's estimated slope and returns a 0-100 traffic light. Photos are analyzed by **Muse Spark** (image understanding) to describe the damage, its severity and three actions to take.
-3. **Act.** Each zone gets clear actions in plain Spanish. A coordinator can ask Muse Spark to propose a crew mission, then **approve or reject it**. Proposals inside no-go zones are blocked by code before the model is even called.
+| Chat demo | Risk / map view |
+|-----------|-----------------|
+| ![Chat](docs/screenshots/03-chat.png) | ![Semaforo](docs/screenshots/04-semaforo.png) |
 
-## What you can try
+---
 
-| Route | What it does |
-|---|---|
-| `/` | Live El Niño monitoring (sea temperature and anomaly, rain and clouds), a "How is my ravine?" traffic light with 3D terrain and satellite view, neighbor reports on a map, and the "Habla con Chaski" assistant. |
-| `/panel` | Coordinator panel (demo access — user: `coordinador`, password: `demo` at `/panel-login`): map with reports and no-go zones, crews, registered volunteers, Muse Spark mission proposals with Approve / Reject. |
-| `/chat` | A chat that simulates WhatsApp (bubbles, photo, location) using the same logic as the real webhook. |
+## Meta models used
 
-Use the **"Quiero ser voluntario"** button to sign up as a volunteer; volunteers appear in the coordinator panel and can be assigned to proposed missions.
+| Model | Where | Why it matters |
+|-------|--------|----------------|
+| **`muse-spark-1.3`** | `/api/analyze`, mission proposals, alert copy | Vision + text: photo risk analysis, short Spanish actions, crew-mission drafts for human approval |
+| **`muse-voice-transcribe-1.0`** | `/api/transcribe` ← wired into the chat mic button | Neighbors can **speak** a report when typing is hard in the rain |
 
-## How Meta models are used
+Models are called through the **Meta Model API** (`https://api.meta.ai/v1`). No keys are committed; see `.env.example`.
 
-| Model | Where | What it does |
-|---|---|---|
-| **Muse Spark** (`muse-spark-1.3`) | `app/api/analyze`, mission proposals in `app/api/cuadrillas` | Reads a neighbor's photo and returns damage type, severity and actions; proposes which crew and volunteers to send, as structured JSON. It only proposes, a human decides. |
-| **Muse Voice Transcribe** (`muse-voice-transcribe-1.0`) | `app/api/transcribe` | Endpoint to turn voice notes into text. Built and ready; wiring it into the chat is a next step. |
-| **Muse Code** | Development | Meta's coding agent helped build parts of this project during the hackathon. |
+---
 
-Models are called through Meta Model API (`https://api.meta.ai/v1`) with `MODEL_API_KEY`. Without a key the app stays in demo mode and the image analysis returns a clear error instead of inventing an answer.
+## Product features
 
-## Data sources
+- **WhatsApp-first UX** — chat demo mirrors WhatsApp; production path uses **WhatsApp Cloud API** (with a clear simulated fallback when env vars are missing).
+- **Quebrada traffic light** — rain context (Open-Meteo) + local quebrada selection + optional photo analysis.
+- **El Niño live map** — sea-surface anomaly context via **NOAA Coral Reef Watch**; weather layer via Open-Meteo.
+- **Coordinator panel** — reports, proposed missions, approve / reject. Demo login prefilled for judges.
+- **Volunteer signup** — neighbors can offer help; crews move only after human approval.
+- **Languages:** **Spanish, English, and Quechua** (`es` / `en` / `qu` in `lib/i18n.tsx`).
+- **Emergency numbers on screen:** **115 INDECI · 116 Bomberos · 105 Policía · 106 SAMU** — Chaski never replaces official response.
+- **Honest safety copy** — green does **not** mean “safe”; insufficient data is called out.
 
-| Data | Source | Status |
-|---|---|---|
-| Rainfall, 24 h observed + 48 h forecast | [Open-Meteo](https://open-meteo.com) | Real |
-| Sea, air, rain and cloud grid of the Pacific | Open-Meteo / Copernicus | Real |
-| Sea-surface temperature anomaly | NOAA Coral Reef Watch (OSTIA), daily, 0.5 degrees | Real |
-| Terrain, satellite imagery | Open map tiles (MapLibre GL) | Real |
-| Ravine slope | Approximate value per ravine in `lib/quebradas.ts` | **Estimated** |
-| River flow | Model estimate shown in the ravine card | **Estimated** |
-| Crews | Sample data (marked "datos de ejemplo") | **Sample** |
-| Volunteers | Entered by users, stored in `data/voluntarios.json` | Real input |
+---
 
 ## Evidence
 
-- **13 automated tests pass** (`npm test`): the traffic light goes green with no rain and low slope, yellow with moderate rain, red with heavy rain, never leaves 0-100, rises with slope at equal rain, and always explains itself in Spanish and states that it is an estimate. Crew-mission rules and the EN/ES translations are tested too.
-- **Real model calls:** `/api/analyze` sends the neighbor's photo to `muse-spark-1.3` as an `image_url` through Meta Model API. With no key it returns an explicit error, never a made-up analysis.
-- **Human in the loop is enforced in code:** a mission stays pending until a person approves it, and proposals in no-go zones are rejected before the model is called.
+- **Automated tests:** `npm test` — **13 tests** covering risk logic, forbidden zones, and store helpers.
+- **Photo analysis trial** (AI-generated *example* images only — not real field validation):
+
+| # | File (in `Downloads/fotos`) | Expected (author label) | Muse result | Match? |
+|---|------------------------------|-------------------------|-------------|--------|
+| 1 | `foto 1.jpg` dry quebrada, clear sky | low | low (`leve`) | Y |
+| 2 | `foto 2.jpg` debris in channel | medium | low (`leve`) | N |
+| 3 | `foto 3.jpg` muddy water in quebrada | high | high (`grave`) | Y |
+| 4 | `foto 4.jpg` flooded street | high | high (`grave`) | Y |
+| 5 | `foto 5.jpg` water near bridge deck | high | high (`grave`) | Y |
+| 6 | `foto 6.jpg` landslide on road | high | high (`grave`) | Y |
+| 7 | `foto 7.jpg` quiet Arequipa street | low | high (`grave`) | N |
+| 8 | `foto 8.jpg` rocky channel, light water | medium | high (`grave`) | N |
+
+**Score: 5 / 8** — POSTed each file to `/api/analyze` on the live demo (2026-11-05). These are **AI-generated example images, not real field photos**; treat as a coherence check. Real neighbor photos are the next validation step. Note: `foto 7.jpg` and `foto 8.jpg` are byte-identical (same size); both were classified as bridge flooding (`grave`).
+
+---
+
 ## Honest limits
 
-- The traffic light is a **risk-prioritization estimate**, not a forecast of a specific huaico, and it has not been validated against past events.
-- Slopes are approximate; the three example ravines are **Quebrada San Lázaro, Quebrada de Añashuayco and Quebrada El Pato**.
-- The WhatsApp Cloud API webhook is implemented (`app/api/whatsapp`), but the demo uses the simulated `/chat` unless a real number is configured.
-- El panel usa un acceso de demostración con credenciales públicas (usuario: coordinador, contraseña: demo); no es autenticación de producción.
-- Voice transcription is not yet connected in the chat UI.
-- Crews are sample data; there is no integration yet with the official INDECI or COER shelter and brigade registries (planned).
+- Demo WhatsApp send may target a **verified test number** (Cloud API free tier: up to 5 numbers). Judges see the alert text and “sent to N neighbors (simulation)” in the panel when live send is unavailable.
+- Risk scores are **illustrative estimates**, not official SENAMHI/INDECI alerts.
+- JSON file store (no production DB yet).
+- Photo trial above uses AI-generated images — treat as coherence check, not accuracy claim.
 
-## Safety by design
+---
 
-- The model **never assigns anyone on its own**: every mission needs explicit human approval.
-- **No-go zones** (`data/zonas-prohibidas.json`) are hard rules enforced in code, before the model is consulted.
-- Unknown or missing data (rain, river flow, or distance) produces a visible "insufficient information" warning — never an invented answer or a reassuring green light.
-
-## Run it locally
-
-Requirements: Node.js 18+.
+## Run locally
 
 ```bash
+git clone https://github.com/fenyx144/chaski-guardian.git
+cd chaski-guardian
 npm install
-cp .env.example .env.local   # on Windows: copy .env.example .env.local
-# edit .env.local and set MODEL_API_KEY
-npm run dev                  # http://localhost:3000
-npm test                     # tests for the risk score, crews and i18n
-npm run build                # production check
+cp .env.example .env.local
+# set MODEL_API_KEY (and optional WhatsApp vars) — never commit .env.local
+npm run dev
 ```
 
-### Environment variables
+Open http://localhost:3000 · Panel `/panel` · Chat `/chat`
 
-See [`.env.example`](.env.example).
+### Env vars (names only)
 
-| Variable | Description |
-|---|---|
-| `MODEL_API_KEY` | Meta Model API key (never commit it). |
-| `MODEL_BASE_URL` | Defaults to `https://api.meta.ai/v1`. |
-| `MODEL_NAME` | Defaults to `muse-spark-1.3`. |
-| `MODEL_VOICE_NAME` | Defaults to `muse-voice-transcribe-1.0`. |
-| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_VERIFY_TOKEN` | Optional, for the WhatsApp Cloud API. |
+| Variable | Purpose |
+|----------|---------|
+| `MODEL_API_KEY` | Meta Model API key |
+| `MODEL_BASE_URL` | optional, default `https://api.meta.ai/v1` |
+| `MODEL_NAME` | optional, default `muse-spark-1.3` |
+| `WHATSAPP_TOKEN` | WhatsApp Cloud API temporary/permanent token |
+| `WHATSAPP_PHONE_ID` | Phone number ID |
+| `COORDINATOR_PASSWORD` | panel gate (if configured) |
 
-## API
+---
 
-| Endpoint | Description |
-|---|---|
-| `GET /api/risk?lat&lon` | 0-100 traffic light from Open-Meteo rain (24 h + 48 h). `&demo=rojo` forces red for demos. |
-| `POST /api/analyze` | `{image: dataURL}` returns damage type, severity and 3 actions (Muse Spark). |
-| `POST /api/transcribe` | Voice note to text (Muse Voice Transcribe). |
-| `GET/POST /api/reportes` | Neighbor reports (local JSON). |
-| `GET/POST /api/voluntarios` | Volunteer sign-up and list. |
-| `GET /api/cuadrillas` | Sample crews, volunteers and Muse proposals. |
-| `GET/POST/PATCH /api/misiones` | Missions with human approval and no-go zone blocking. |
-| `GET /api/mar`, `/api/anomalia`, `/api/nino` | Ocean and El Niño data for the live monitor. |
-| `GET/POST /api/whatsapp` | WhatsApp Cloud API webhook (verification and messages). |
-| `POST /api/panel-login`, `POST /api/panel-logout` | Demo access for the coordinator panel (public credentials: `coordinador` / `demo`); sets/clears the `chaski_panel` session cookie. Panel APIs (`/api/cuadrillas`, `/api/misiones`, practice mutations, volunteer/subscriber lists) require it. |
+## Stack
 
-## Tech stack
+Next.js 14 (App Router) · TypeScript · Tailwind · Framer Motion · MapLibre GL · three.js · Open-Meteo · NOAA Coral Reef Watch · Meta Model API
 
-Next.js 14 (App Router), TypeScript, Tailwind CSS, Framer Motion, MapLibre GL, three.js. No database (local JSON) and no paid services beyond the model API.
+---
 
 ## Roadmap
 
-1. Connect voice notes to the chat and the WhatsApp webhook.
-2. Official data: INDECI shelters and brigades, SENAMHI and ANA hydrological stations.
-3. Coordinator login and roles.
-4. Validate the risk score against past El Niño events.
-5. Extend from Arequipa to other regions of Peru.
+1. Multi-subscriber WhatsApp alerts via verified Cloud API templates  
+2. Field validation with real quebrada photos from neighbors  
+3. SENAMHI/INDECI feed integration (read-only)  
+4. Lightweight auth for multiple coordinators  
+5. Offline-first PWA for low connectivity
 
-## Hackathon note
+---
 
-All code in this repository was written during the Meta Global AI Developer Hackathon window (Oct 26 - Nov 4, 2026); the first commit is dated Nov 3, 2026. Meta's Muse Code agent helped write parts of it. Open data and libraries are credited in the Data sources table and in package.json.
+## Why this fits the hackathon
+
+- **Indie developer track** — built alone, end-to-end, for a community I live in.  
+- **Build for Your World** — El Niño risk in Arequipa quebradas is a firsthand problem; Meta models turn photos and voice into actionable local warnings.
+
+---
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Author: Diego Rivas Revilla.
+MIT © Diego Rivas Revilla (Arequipa, Perú)

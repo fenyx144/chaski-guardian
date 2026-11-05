@@ -92,12 +92,26 @@ export default function ChatWidget({ simulacro = false }: { simulacro?: boolean 
   const vozRef = useRef("");
   const reconocimientoRef = useRef<{ stop: () => void } | null>(null);
 
+  const bienvenidaIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (abierto && mensajes.length === 0) {
-      setMensajes([mk({ de: "chaski", texto: t("chat.bienvenida") })]);
+      const m = mk({ de: "chaski", texto: t("chat.bienvenida") });
+      bienvenidaIdRef.current = m.id;
+      setMensajes([m]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto]);
+
+  // Si el idioma cambia despues, la bienvenida guardada se re-traduce.
+  useEffect(() => {
+    if (bienvenidaIdRef.current == null) return;
+    setMensajes((prev) =>
+      prev.map((m) =>
+        m.id === bienvenidaIdRef.current ? { ...m, texto: t("chat.bienvenida") } : m
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -113,10 +127,7 @@ export default function ChatWidget({ simulacro = false }: { simulacro?: boolean 
       } else {
         decir({
           de: "chaski",
-          texto:
-            lang === "en"
-              ? `Noted: "${t2.slice(0, 200)}". Send me your location 📍 or a photo 📷 so I can help better.`
-              : `Anotado: "${t2.slice(0, 200)}". Envíame tu ubicación 📍 o una foto 📷 para ayudarte mejor.`,
+          texto: t("chat.anotado", { texto: t2.slice(0, 200) }),
         });
       }
     }, 500);
