@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { QUEBRADAS } from "@/lib/quebradas";
 import { SEMAFORO_META, type Semaforo } from "@/lib/risk";
 import Mascota from "@/components/Mascota";
+import VoluntarioBoton from "@/components/VoluntarioBoton";
 
 // Plan B: chat que simula WhatsApp para demos sin configuración externa.
 // Usa la misma lógica que el webhook (/api/risk, /api/analyze, /api/reportes).
@@ -140,6 +141,9 @@ export default function ChatPage() {
         <p className="mt-2 font-medium text-cocoa/70 dark:text-crema/70">
           Como hablar con Chaski Guardian por WhatsApp, pero sin configurar nada.
         </p>
+        <div className="mt-3">
+          <VoluntarioBoton />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-3xl border-2 border-cocoa shadow-pop dark:border-crema/25 dark:shadow-pop-noche">

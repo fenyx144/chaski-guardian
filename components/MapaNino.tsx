@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Mascota from "@/components/Mascota";
+import { QUEBRADAS, quebradaMasCercana } from "@/lib/quebradas";
 
 interface NinoData {
   oni: number;
@@ -26,6 +27,16 @@ interface ClimaGrid {
 }
 
 const AREQUIPA: [number, number] = [-71.54, -16.4];
+
+function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+}
 
 const CIUDADES: { nombre: string; lon: number; lat: number }[] = [
   { nombre: "Piura", lon: -80.63, lat: -5.19 },
@@ -66,7 +77,13 @@ function fraseEstado(d: NinoData): { titulo: string; detalle: string; animo: "fe
   return { titulo: "El mar está normal: no hay El Niño.", detalle: "Igual mira tu semáforo si llueve.", animo: "feliz" };
 }
 
-export default function MapaNino() {
+export default function MapaNino({
+  onElegirQuebrada,
+}: {
+  onElegirQuebrada?: (id: string) => void;
+}) {
+  const elegirRef = useRef(onElegirQuebrada);
+  elegirRef.current = onElegirQuebrada;
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<maplibregl.Map | null>(null);
   const [datos, setDatos] = useState<NinoData | null>(null);
@@ -201,6 +218,17 @@ export default function MapaNino() {
         .setLngLat(AREQUIPA)
         .setPopup(new maplibregl.Popup().setHTML("<strong>Arequipa</strong><br/>Tus quebradas están aquí."))
         .addTo(map);
+
+      // Quebradas y torrenteras conocidas, con su información al tocarlas.
+      for (const q of QUEBRADAS) {
+        const punto = document.createElement("div");
+        punto.style.cssText =
+          "width:20px;height:20px;border-radius:9999px;background:#1f6fb5;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer";
+        punto.textContent = "💧";
+        punto.title = `${q.nombre} — ver en ¿Cómo está mi quebrada?`;
+        punto.addEventListener("click", () => elegirRef.current?.(q.id));
+        new maplibregl.Marker({ element: punto }).setLngLat([q.lon, q.lat]).addTo(map);
+      }
     });
 
     return () => {
@@ -272,9 +300,13 @@ export default function MapaNino() {
         try {
           const res = await fetch(`/api/risk?lat=${lat}&lon=${lon}`);
           const r = (await res.json()) as { semaforo?: string };
+          const q = quebradaMasCercana(lat, lon);
+          const d = distanciaKm(lat, lon, q.lat, q.lon);
           marcadorUsuario.current.setPopup(
             new maplibregl.Popup().setHTML(
-              `<strong>Tú estás aquí</strong><br/>Tu color: ${r.semaforo ?? "?"}`
+              `<strong>Tú estás aquí</strong><br/>Tu color: ${r.semaforo ?? "?"}<br/>` +
+                `Tu quebrada más cercana: <strong>${q.nombre}</strong> (${q.distrito}), a ${d} km.<br/>` +
+                `${q.tipo} · Pendiente ~${q.pendienteEstimada}°<br/>💧 ${q.regimen}`
             )
           ).togglePopup();
         } catch {
@@ -284,6 +316,13 @@ export default function MapaNino() {
       () => setAvisoUbic("Activa el GPS y permite el acceso."),
       { enableHighAccuracy: true, timeout: 12000 }
     );
+  };
+
+  const verArequipa = () => {
+    const map = mapa.current;
+    if (!map) return;
+    map.setMaxBounds();
+    map.flyTo({ center: AREQUIPA, zoom: 10.5, duration: 2000 });
   };
 
   const estado = datos ? fraseEstado(datos) : null;
@@ -361,12 +400,20 @@ export default function MapaNino() {
             Pintando el mapa…
           </p>
         )}
-        <button
-          onClick={ubicarme}
-          className="absolute bottom-4 right-3 rounded-2xl border-2 border-cocoa bg-sol px-4 py-2 text-sm font-extrabold text-cocoa shadow-pop-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
-        >
-          📍 Ubicarme
-        </button>
+        <div className="absolute bottom-4 right-3 flex gap-2">
+          <button
+            onClick={verArequipa}
+            className="rounded-2xl border-2 border-cocoa bg-white px-4 py-2 text-sm font-extrabold text-cocoa shadow-pop-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+          >
+            🏔️ Ver Arequipa
+          </button>
+          <button
+            onClick={ubicarme}
+            className="rounded-2xl border-2 border-cocoa bg-sol px-4 py-2 text-sm font-extrabold text-cocoa shadow-pop-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+          >
+            📍 Ubicarme
+          </button>
+        </div>
         {avisoUbic && (
           <p className="absolute bottom-16 right-3 max-w-[60%] rounded-xl bg-black/70 px-3 py-1.5 text-xs font-bold text-white">
             {avisoUbic}

@@ -3,6 +3,8 @@ import { Bowlby_One, Urbanist, Schoolbell } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Proveedores from "@/components/Proveedores";
+import Pie from "@/components/Pie";
+import ChatWidget from "@/components/ChatWidget";
 
 const display = Bowlby_One({
   subsets: ["latin"],
@@ -44,10 +46,8 @@ export default function RootLayout({
         <Proveedores>
           <NavBar />
           <main className="mx-auto w-full max-w-6xl px-4 pb-16">{children}</main>
-          <footer className="border-t-2 border-cocoa/10 py-6 text-center text-sm font-semibold text-cocoa/60 dark:border-white/10 dark:text-crema/60">
-            Chaski Guardian · MIT · Estimación ilustrativa, no reemplaza alertas
-            oficiales (INDECI / SENAMHI).
-          </footer>
+          <Pie />
+          <ChatWidget />
         </Proveedores>
       </body>
     </html>

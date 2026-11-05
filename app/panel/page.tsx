@@ -3,7 +3,9 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import type { Reporte, Mision } from "@/lib/store";
+import type { Reporte, Mision, Propuesta } from "@/lib/store";
+import type { Cuadrilla } from "@/lib/cuadrillas";
+import type { Voluntario } from "@/lib/voluntarios";
 import { SEMAFORO_META } from "@/lib/risk";
 import Boton from "@/components/Boton";
 
@@ -26,17 +28,24 @@ const ESTADO_TXT: Record<Mision["estado"], string> = {
 export default function PanelPage() {
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [misiones, setMisiones] = useState<Mision[]>([]);
+  const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [propuestas, setPropuestas] = useState<Propuesta[]>([]);
   const [aviso, setAviso] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
 
   const recargar = useCallback(async () => {
     try {
-      const [r1, r2] = await Promise.all([
+      const [r1, r2, r3] = await Promise.all([
         fetch("/api/reportes").then((r) => r.json()),
         fetch("/api/misiones").then((r) => r.json()),
+        fetch("/api/cuadrillas").then((r) => r.json()),
       ]);
       setReportes(r1.reportes ?? []);
       setMisiones(r2.misiones ?? []);
+      setCuadrillas(r3.cuadrillas ?? []);
+      setVoluntarios(r3.voluntarios ?? []);
+      setPropuestas(r3.propuestas ?? []);
     } catch {
       setAviso("Sin conexión con el servidor.");
     }
@@ -61,6 +70,42 @@ export default function PanelPage() {
       await recargar();
     } catch {
       setAviso("No se pudo proponer la misión.");
+    } finally {
+      setOcupado(null);
+    }
+  };
+
+  const pedirPropuesta = async (reporteId: string) => {
+    setOcupado(reporteId);
+    setAviso("");
+    try {
+      const res = await fetch("/api/cuadrillas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reporteId }),
+      });
+      const data = await res.json();
+      setAviso(data.aviso ?? data.error ?? "Propuesta lista. Revísala abajo.");
+      await recargar();
+    } catch {
+      setAviso("No se pudo pedir la propuesta.");
+    } finally {
+      setOcupado(null);
+    }
+  };
+
+  const decidirPropuesta = async (id: string, accion: "aprobar" | "rechazar") => {
+    setOcupado(id);
+    try {
+      await fetch("/api/cuadrillas", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, accion }),
+      });
+      setAviso(accion === "aprobar" ? "Propuesta aprobada. Recién ahora la cuadrilla queda asignada." : "Propuesta rechazada. Nadie fue asignado.");
+      await recargar();
+    } catch {
+      setAviso("No se pudo registrar tu decisión.");
     } finally {
       setOcupado(null);
     }
@@ -111,13 +156,106 @@ export default function PanelPage() {
 
       <MapaPanel reportes={reportes} />
 
+      {/* Cuadrillas de ejemplo y voluntarios inscritos */}
+      <div className="grid gap-10 lg:grid-cols-2">
+        <section>
+          <h2 className="font-display text-2xl">
+            Cuadrillas{" "}
+            <span className="rounded-full bg-sol px-2 py-0.5 text-xs font-black text-cocoa">datos de ejemplo</span>
+          </h2>
+          <div className="mt-2 divide-y-2 divide-dashed divide-cocoa/20 dark:divide-crema/20">
+            {cuadrillas.map((c) => (
+              <article key={c.id} className="py-3">
+                <p className="font-extrabold">{c.nombre}</p>
+                <p className="text-sm font-semibold text-cocoa/65 dark:text-crema/70">
+                  {c.tipo} · {c.estado} · <span className="text-cocoa/50 dark:text-crema/50">datos de ejemplo</span>
+                </p>
+              </article>
+            ))}
+            {cuadrillas.length === 0 && <p className="py-3 font-semibold text-cocoa/55">Sin cuadrillas.</p>}
+          </div>
+        </section>
+        <section>
+          <h2 className="font-display text-2xl">Voluntarios inscritos ({voluntarios.length})</h2>
+          <div className="mt-2 divide-y-2 divide-dashed divide-cocoa/20 dark:divide-crema/20">
+            {voluntarios.map((v) => (
+              <article key={v.id} className="py-3">
+                <p className="font-extrabold">{v.nombre}</p>
+                <p className="text-sm font-semibold text-cocoa/65 dark:text-crema/70">
+                  {v.habilidad} · {v.distrito} · {v.disponibilidad}
+                </p>
+              </article>
+            ))}
+            {voluntarios.length === 0 && (
+              <p className="py-3 font-semibold text-cocoa/55 dark:text-crema/60">
+                Aún no hay voluntarios. Se inscriben con el botón “Quiero ser voluntario”.
+              </p>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Propuestas de Muse: nadie se asigna sin aprobacion humana */}
+      <section>
+        <h2 className="font-display text-2xl">Propuestas de Muse ({propuestas.length})</h2>
+        <p className="mt-1 max-w-2xl text-sm font-semibold text-cocoa/65 dark:text-crema/70">
+          Muse Spark solo propone. Nadie queda asignado hasta que apruebes, y las
+          zonas prohibidas bloquean la propuesta antes de consultar al modelo.
+          Las cuadrillas son datos de ejemplo.
+        </p>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          {propuestas.map((p) => (
+            <article key={p.id} className="rounded-3xl border-2 border-cocoa bg-white p-4 shadow-pop dark:border-crema/25 dark:bg-carboncito dark:shadow-pop-noche">
+              <p className="font-extrabold">
+                {p.cuadrillaSugerida ?? "Sin cuadrilla"} ·{" "}
+                <span className="text-sm">{p.reporteTipo}</span>
+              </p>
+              <p className="mt-1 text-sm font-bold">{ESTADO_TXT[p.estado]}</p>
+              <p className="text-xs font-bold text-cocoa/55 dark:text-crema/60">
+                Origen: {p.origen === "muse-spark-1.3" ? "Muse Spark (muse-spark-1.3)" : p.origen} ·{" "}
+                {new Date(p.creada).toLocaleString("es-PE")} · datos de ejemplo
+              </p>
+              <p className="mt-2 text-sm font-medium">{p.motivo}</p>
+              {p.voluntariosAsignados.length > 0 && (
+                <p className="mt-2 text-sm font-semibold">
+                  Voluntarios: {p.voluntariosAsignados.map((v) => `${v.nombre} (${v.habilidad})`).join(", ")}
+                </p>
+              )}
+              {p.equipoNecesario.length > 0 && (
+                <p className="mt-1 text-sm font-semibold">
+                  Equipo: {p.equipoNecesario.join(", ")}
+                </p>
+              )}
+              {p.estado === "pendiente" && (
+                <div className="mt-3 flex gap-2">
+                  <Boton variante="hoja" onClick={() => decidirPropuesta(p.id, "aprobar")} disabled={ocupado === p.id} className="px-4 py-1.5 text-sm">
+                    Aprobar
+                  </Boton>
+                  <Boton variante="linea" onClick={() => decidirPropuesta(p.id, "rechazar")} disabled={ocupado === p.id} className="px-4 py-1.5 text-sm">
+                    Rechazar
+                  </Boton>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+        {propuestas.length === 0 && (
+          <p className="py-3 font-semibold text-cocoa/55 dark:text-crema/60">
+            Sin propuestas. En un reporte en rojo, toca “Pedir propuesta a Muse”.
+          </p>
+        )}
+      </section>
+
       <div className="grid gap-10 lg:grid-cols-2">
         {/* Reportes */}
         <section>
           <h2 className="font-display text-2xl">Reportes ({reportes.length})</h2>
           <div className="mt-2 divide-y-2 divide-dashed divide-cocoa/20 dark:divide-crema/20">
             {reportes.map((r) => (
-              <article key={r.id} className="py-4">
+              <article
+                key={r.id}
+                className={`py-4 ${r.tipo.includes("ALERTA") ? "rounded-2xl border-2 border-red-500 bg-red-50 px-3 dark:bg-red-950/40" : ""}`}
+              >
                 <div className="flex items-center gap-2">
                   <span
                     className="inline-block h-4 w-4 rounded-full border border-cocoa/40"
@@ -133,14 +271,26 @@ export default function PanelPage() {
                 <p className="mt-1 font-medium text-cocoa/75 dark:text-crema/80">
                   {r.descripcion || "(sin descripción)"}
                 </p>
-                <Boton
-                  variante="sol"
-                  onClick={() => proponer(r.id)}
-                  disabled={ocupado === r.id}
-                  className="mt-2 px-4 py-1.5 text-sm"
-                >
-                  {ocupado === r.id ? "Proponiendo…" : "Proponer misión de cuadrilla"}
-                </Boton>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Boton
+                    variante="sol"
+                    onClick={() => proponer(r.id)}
+                    disabled={ocupado === r.id}
+                    className="px-4 py-1.5 text-sm"
+                  >
+                    {ocupado === r.id ? "Proponiendo…" : "Proponer misión de cuadrilla"}
+                  </Boton>
+                  {r.semaforo === "rojo" && (
+                    <Boton
+                      variante="tinta"
+                      onClick={() => pedirPropuesta(r.id)}
+                      disabled={ocupado === r.id}
+                      className="px-4 py-1.5 text-sm"
+                    >
+                      {ocupado === r.id ? "Consultando a Muse…" : "🤖 Pedir propuesta a Muse"}
+                    </Boton>
+                  )}
+                </div>
               </article>
             ))}
             {reportes.length === 0 && (

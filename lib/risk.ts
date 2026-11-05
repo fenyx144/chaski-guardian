@@ -10,6 +10,8 @@ export interface RiesgoInput {
   lluvia48h: number;
   /** Pendiente estimada del cauce en grados. */
   pendiente: number;
+  /** Distancia a la quebrada en km (opcional): estar cerca sube el riesgo. */
+  distanciaKm?: number;
 }
 
 export interface RiesgoResult {
@@ -27,17 +29,48 @@ const clamp = (n: number, min: number, max: number) =>
  * - pronóstico 48h pesa menos,
  * - la pendiente suma un factor de velocidad del huaico.
  */
-export function calcularRiesgo(input: RiesgoInput): RiesgoResult {
+export function calcularRiesgo(input: RiesgoInput, idioma: "es" | "en" = "es"): RiesgoResult {
   const lluvia24h = Math.max(0, input.lluvia24h || 0);
   const lluvia48h = Math.max(0, input.lluvia48h || 0);
   const pendiente = clamp(input.pendiente || 0, 0, 45);
 
   const score = Math.round(
-    clamp(lluvia24h * 2.2 + lluvia48h * 1.1 + pendiente * 1.4, 0, 100)
+    clamp(
+      lluvia24h * 2.2 +
+        lluvia48h * 1.1 +
+        pendiente * 1.4 +
+        (input.distanciaKm === undefined
+          ? 0
+          : input.distanciaKm <= 1
+          ? 12
+          : input.distanciaKm <= 3
+          ? 6
+          : input.distanciaKm <= 6
+          ? 3
+          : 0),
+      0,
+      100
+    )
   );
 
   const semaforo: Semaforo =
     score >= 65 ? "rojo" : score >= 35 ? "amarillo" : "verde";
+
+  if (idioma === "en") {
+    const explicacionEn =
+      semaforo === "rojo"
+        ? `HIGH risk (estimate): ${lluvia24h.toFixed(1)} mm in 24 h and ` +
+          `${lluvia48h.toFixed(1)} mm forecast, slope ~${pendiente}°. ` +
+          `Possible flooding or mudslide: avoid the ravine and get ready to evacuate.`
+        : semaforo === "amarillo"
+        ? `MODERATE risk (estimate): ${lluvia24h.toFixed(1)} mm in 24 h and ` +
+          `${lluvia48h.toFixed(1)} mm forecast, slope ~${pendiente}°. ` +
+          `Watch the channel and keep your emergency backpack ready.`
+        : `LOW risk (estimate): ${lluvia24h.toFixed(1)} mm in 24 h and ` +
+          `${lluvia48h.toFixed(1)} mm forecast, slope ~${pendiente}°. ` +
+          `No danger signs for now; stay alert if it rains.`;
+    return { score, semaforo, explicacion: explicacionEn };
+  }
 
   const explicacion =
     semaforo === "rojo"

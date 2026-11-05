@@ -1,0 +1,26 @@
+[
+  {
+    "nombre": "Ana Torres",
+    "distrito": "Arequipa (Centro)",
+    "habilidad": "logística",
+    "disponibilidad": "Tardes",
+    "id": "vol-mw2vp4qx-ucb86",
+    "fecha": "2026-11-05T01:40:17.865Z"
+  },
+  {
+    "nombre": "Luis Huamán",
+    "distrito": "Cerro Colorado",
+    "habilidad": "salud",
+    "disponibilidad": "Fines de semana",
+    "id": "vol-mw2vp4pp-mx3am",
+    "fecha": "2026-11-05T01:40:17.822Z"
+  },
+  {
+    "nombre": "María Quispe",
+    "distrito": "Paucarpata",
+    "habilidad": "rescate",
+    "disponibilidad": "Cuando haya emergencia",
+    "id": "vol-mw2vp4oj-zzrej",
+    "fecha": "2026-11-05T01:40:17.779Z"
+  }
+]

@@ -29,9 +29,24 @@ export interface Mision {
   creada: string;
 }
 
+export interface Propuesta {
+  id: string;
+  reporteId: string;
+  reporteTipo: string;
+  /** Propuesta de Muse (o de respaldo): NUNCA se ejecuta sin aprobación humana. */
+  cuadrillaSugerida: string | null;
+  voluntariosAsignados: { id: string; nombre: string; habilidad: string }[];
+  motivo: string;
+  equipoNecesario: string[];
+  estado: EstadoMision;
+  origen: "muse-spark-1.3" | "respaldo local" | "bloqueada";
+  creada: string;
+}
+
 interface StoreData {
   reportes: Reporte[];
   misiones: Mision[];
+  propuestas?: Propuesta[];
 }
 
 const STORE_PATH = path.join(process.cwd(), "data", "store.json");
@@ -113,6 +128,32 @@ export async function guardarMision(
   data.misiones.unshift(nueva);
   await escribir(data);
   return nueva;
+}
+
+export async function listarPropuestas(): Promise<Propuesta[]> {
+  return (await leer()).propuestas ?? [];
+}
+
+export async function guardarPropuesta(
+  p: Omit<Propuesta, "id" | "creada">
+): Promise<Propuesta> {
+  const data = await leer();
+  const nueva: Propuesta = { ...p, id: uid("pro"), creada: new Date().toISOString() };
+  data.propuestas = [nueva, ...(data.propuestas ?? [])];
+  await escribir(data);
+  return nueva;
+}
+
+export async function cambiarEstadoPropuesta(
+  id: string,
+  estado: EstadoMision
+): Promise<Propuesta | null> {
+  const data = await leer();
+  const p = (data.propuestas ?? []).find((x) => x.id === id);
+  if (!p) return null;
+  p.estado = estado;
+  await escribir(data);
+  return p;
 }
 
 export async function cambiarEstadoMision(
